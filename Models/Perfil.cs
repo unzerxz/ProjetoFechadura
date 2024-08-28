@@ -10,9 +10,9 @@ namespace ProjetoFechadura.Models
     public class Perfil
     {
         [Column("idPerfil")]
-        public int idPerfil { get; set; }
+        public int IdPerfil { get; set; }
 
         [Column("tipoPerfil")]
-        public ETipoPerfil tipoPerfil {get;set;}
+        public ETipoPerfil TipoPerfil {get;set;}
     }
 }

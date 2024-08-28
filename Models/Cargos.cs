@@ -9,9 +9,9 @@ namespace ProjetoFechadura.Models
     public class Cargos
     {
         [Column("idCargo")]
-        public int idCargo { get; set; }
+        public int IdCargo { get; set; }
 
         [Column("nomeCargo")]
-        public string nomeCargo { get; set; }
+        public string NomeCargo { get; set; }
     }
 }

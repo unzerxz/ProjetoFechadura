@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoFechadura.Models
 {
-    public class Funcionarios
+    public class Funcionario
     {
         [Column("idFuncionario")]
         public int IdFuncionario { get; set; }
@@ -20,17 +20,17 @@ namespace ProjetoFechadura.Models
         [Column("credencialCartao")]
         public string? CredencialCartao { get; set; }
 
-        [Column("credencialCTeclado")]
+        [Column("credencialTeclado")]
         public int? CredencialTeclado { get; set; }
 
         [Column("senha")]
         public string Senha { get; set; }
 
         [Column("cargo_idCargo")]
-        public int cargo_idCargo { get; set; }
+        public int Cargo_IdCargo { get; set; }
 
         [Column("perfil_idPerfil")]
-        public int perfil_idPerfil { get; set; }
+        public int Perfil_IdPerfil { get; set; }
 
     }
 }
