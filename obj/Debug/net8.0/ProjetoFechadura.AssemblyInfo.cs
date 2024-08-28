@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProjetoFechadura")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+58d89acab98809c6b4584437fdf7844f19ec2acf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc8fc3b51fe0acdb8b29d2d5dcc53e25f15b205b")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProjetoFechadura")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProjetoFechadura")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
