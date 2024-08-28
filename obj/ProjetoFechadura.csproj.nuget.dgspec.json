@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura.csproj": {}
+    "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura\\ProjetoFechadura.csproj": {}
   },
   "projects": {
-    "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura.csproj": {
+    "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura\\ProjetoFechadura.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura.csproj",
+        "projectUniqueName": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura\\ProjetoFechadura.csproj",
         "projectName": "ProjetoFechadura",
-        "projectPath": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura.csproj",
+        "projectPath": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura\\ProjetoFechadura.csproj",
         "packagesPath": "C:\\Users\\lucas.unzer\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\obj\\",
+        "outputPath": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\lucas.unzer\\AppData\\Roaming\\NuGet\\NuGet.Config"

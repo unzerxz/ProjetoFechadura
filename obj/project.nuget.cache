@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "unW2EQt+w3FQMyYehw7hKoCvni5nPBqhJp/i56Yrw3Zm5NBejm2MbSJsbnLDc0BDujCdbXlluz1YBAhgkqjEvw==",
+  "dgSpecHash": "d91Fjojk3zh2sIp/nDsaRB7sCMv4gPYWYfgnLcl3vIqXcs4n+P36KWxTviZkyNSRoBhLVaJiTSipNXU5xTllig==",
   "success": true,
-  "projectFilePath": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura.csproj",
+  "projectFilePath": "C:\\Users\\lucas.unzer\\Documents\\unzer\\rodolfo\\ProjetoFechadura\\ProjetoFechadura\\ProjetoFechadura.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\lucas.unzer\\.nuget\\packages\\microsoft.aspnetcore.openapi\\8.0.2\\microsoft.aspnetcore.openapi.8.0.2.nupkg.sha512",
     "C:\\Users\\lucas.unzer\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
