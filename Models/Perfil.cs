@@ -13,6 +13,6 @@ namespace ProjetoFechadura.Models
         public int IdPerfil { get; set; }
 
         [Column("tipoPerfil")]
-        public ETipoPerfil TipoPerfil {get;set;}
+        public int TipoPerfil {get;set;} //0 -> Usuário; 1 -> Admin
     }
 }

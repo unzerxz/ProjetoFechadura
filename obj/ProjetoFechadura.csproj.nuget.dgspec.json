@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\ProjetoFechadura.csproj": {}
+    "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\ProjetoFechadura.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\ProjetoFechadura.csproj": {
+    "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\ProjetoFechadura.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\ProjetoFechadura.csproj",
+        "projectUniqueName": "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\ProjetoFechadura.csproj",
         "projectName": "ProjetoFechadura",
-        "projectPath": "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\ProjetoFechadura.csproj",
-        "packagesPath": "C:\\Users\\Roger.Diegoli\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\obj\\",
+        "projectPath": "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\ProjetoFechadura.csproj",
+        "packagesPath": "C:\\Users\\Roger_Diegoli\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Roger.Diegoli\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Roger_Diegoli\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -81,7 +75,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.202/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
