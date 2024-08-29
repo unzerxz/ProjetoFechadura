@@ -30,7 +30,7 @@ public class SalaDAO
                 Status = reader.GetInt32("status"),
                 CredencialSala = reader.IsDBNull(reader.GetOrdinal("credencialSala")) ? null : reader.GetString("credencialSala"),
                 IsAtivo = reader.GetInt32("isAtivo"),
-                Funcionario_IdFuncionario = reader.GetInt32("funcionario_idFucionario")
+                Funcionario_IdFuncionario = reader.GetInt32("funcionario_idFuncionario")
             };
             salas.Add(sala);
         }
@@ -103,7 +103,7 @@ public class SalaDAO
         try
         {
             _connection.Open();
-            const string query = "INSERT INTO sala (identificacaoSala, status, credencialSala, isAtivo, funcionario_idFucionario) " +
+            const string query = "INSERT INTO sala (identificacaoSala, status, credencialSala, isAtivo, funcionario_idFuncionario) " +
                                  "VALUES (@IdentificacaoSala, @Status, @CredencialSala, @IsAtivo, @FuncionarioId)";
 
             using var command = new MySqlCommand(query, _connection);
@@ -141,7 +141,7 @@ public class SalaDAO
                                  "status = @Status, " +
                                  "credencialSala = @CredencialSala, " +
                                  "isAtivo = @IsAtivo, " +
-                                 "funcionario_idFucionario = @FuncionarioId " +
+                                 "funcionario_idFuncionario = @FuncionarioId " +
                                  "WHERE idSala = @IdSala";
 
             using var command = new MySqlCommand(query, _connection);
