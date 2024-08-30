@@ -10,7 +10,7 @@ public class MySqlConnectionFactory
                                         "port=3306;" +
                                         "database=bdfechadura;" +
                                         "uid=root;" +
-                                        "pwd=123456;"; //senai2024;
+                                        "pwd=senai2024;"; //senai2024;
         return new MySqlConnection(connectionString);
     }
 }

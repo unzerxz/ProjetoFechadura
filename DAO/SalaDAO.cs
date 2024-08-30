@@ -194,4 +194,78 @@ public class SalaDAO
             _connection.Close();
         }
     }
+
+    public int IsCredencialUsuarioTecladoValida(int credencialTeclado)
+{
+    int idFuncionario = -1;
+
+    try
+    {
+        _connection.Open();
+
+        const string query = "SELECT idFuncionario FROM bdFechadura.funcionario WHERE credencialTeclado = @CredencialTeclado;";
+
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@CredencialTeclado", credencialTeclado);
+
+        using var reader = command.ExecuteReader();
+
+        if (reader.Read())
+        {
+            idFuncionario = reader.GetInt32("idFuncionario");
+        }
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return idFuncionario;
+}
+
+
+        public int IsCredencialUsuarioCartaoValida(string credencialCartao)
+    {
+        int idFuncionario = -1;
+
+        try
+        {
+            _connection.Open();
+
+            const string query = "SELECT idFuncionario FROM bdFechadura.funcionario WHERE credencialCartao = @CredencialCartao;";
+
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@CredencialCartao", credencialCartao);
+
+            using var reader = command.ExecuteReader();
+
+            if (reader.Read())
+            {
+                idFuncionario = reader.GetInt32("idFuncionario");
+            }
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+        }
+        finally
+        {
+            _connection.Close();
+        }
+
+        return idFuncionario;
+    }
+
 }

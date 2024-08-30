@@ -18,6 +18,8 @@ public class SalaController : ControllerBase
         _salaDao = new SalaDAO();
     }
 
+
+
     [HttpGet]
     public IActionResult Read()
     {
@@ -33,6 +35,28 @@ public class SalaController : ControllerBase
         return Ok(sala);
     }
 
+    [HttpGet("validarCredencial")]
+    public IActionResult ValidarCredencial([FromQuery] string credencialCartao = null, [FromQuery] int? credencialTeclado = null)
+    {
+        int idFuncionario = -1;
+
+        if (!string.IsNullOrEmpty(credencialCartao))
+        {
+            idFuncionario = _salaDao.IsCredencialUsuarioCartaoValida(credencialCartao);
+        }
+        else if (credencialTeclado.HasValue)
+        {
+            idFuncionario = _salaDao.IsCredencialUsuarioTecladoValida(credencialTeclado.Value);
+        }
+
+        if (idFuncionario != -1)
+        {
+            return Ok(new { Message = "Credencial válida", FuncionarioId = idFuncionario });
+        }
+
+        return Unauthorized(new { Message = "Credencial inválida" });
+    }
+
     [HttpPost]
     public IActionResult Post(Sala sala)
     {
@@ -41,7 +65,7 @@ public class SalaController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public IActionResult Put(int id, [FromBody] Sala sala)
+    public IActionResult AtualizaUsuarioSala(int id, [FromBody] Sala sala)
     {
         if (id != sala.IdSala) return BadRequest();
         if (_salaDao.ReadById(id) == null) return NotFound();
