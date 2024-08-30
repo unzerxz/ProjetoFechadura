@@ -190,4 +190,114 @@ public class RegistroDAO
             _connection.Close();
         }
     }
+
+        public int CriarRegistro(int salaId, int funcionarioId)
+    {
+        int idRegistro = -1;
+        try
+        {
+            _connection.Open();
+
+            string query = @"
+                INSERT INTO bdFechadura.registro (horarioEntrada, sala_idSala, funcionario_idFuncionario)
+                VALUES (@HorarioEntrada, @SalaId, @FuncionarioId);";
+
+            using var command = new MySqlCommand(query, _connection);
+
+            command.Parameters.AddWithValue("@HorarioEntrada", DateTime.Now); // Horário atual
+            command.Parameters.AddWithValue("@SalaId", salaId);
+            command.Parameters.AddWithValue("@FuncionarioId", funcionarioId);
+
+            command.ExecuteNonQuery();
+            idRegistro = (int)command.LastInsertedId;
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro no Banco: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+        }
+        finally
+        {
+            _connection.Close();
+        }
+
+        return idRegistro;
+    }
+
+    public int ObterRegistroAtivo(int idSala)
+{
+    int idRegistro = -1;
+
+    try
+    {
+        _connection.Open();
+
+        string query = @"
+            SELECT idRegistro 
+            FROM bdFechadura.registro 
+            WHERE sala_idSala = @SalaId 
+            AND horarioSaida IS NULL 
+            LIMIT 1;";
+
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@SalaId", idSala);
+
+        var result = command.ExecuteScalar();
+
+        if (result != null)
+        {
+            idRegistro = Convert.ToInt32(result);
+        }
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro no Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return idRegistro;
+}
+
+
+    public void AtualizarHorarioSaida(int registroId)
+    {
+        try
+        {
+            _connection.Open();
+
+            string query = @"
+                UPDATE bdFechadura.registro 
+                SET horarioSaida = @HorarioSaida 
+                WHERE idRegistro = @RegistroId;";
+
+            using var command = new MySqlCommand(query, _connection);
+
+            command.Parameters.AddWithValue("@HorarioSaida", DateTime.Now); // Horário atual
+            command.Parameters.AddWithValue("@RegistroId", registroId);
+
+            command.ExecuteNonQuery();
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro no Banco: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+        }
+        finally
+        {
+            _connection.Close();
+        }
+    }
 }
