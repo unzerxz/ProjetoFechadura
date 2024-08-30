@@ -101,3 +101,4 @@ C:\Users\Roger.Diegoli\Desktop\Roger\CloneRepository\ProjetoFechadura\obj\Debug\
 C:\Users\Roger.Diegoli\Desktop\Roger\CloneRepository\ProjetoFechadura\obj\Debug\net8.0\ProjetoFechadura.pdb
 C:\Users\Roger.Diegoli\Desktop\Roger\CloneRepository\ProjetoFechadura\obj\Debug\net8.0\ProjetoFechadura.genruntimeconfig.cache
 C:\Users\Roger.Diegoli\Desktop\Roger\CloneRepository\ProjetoFechadura\obj\Debug\net8.0\ref\ProjetoFechadura.dll
+C:\Users\Roger.Diegoli\Desktop\Roger\CloneRepository\ProjetoFechadura\bin\Debug\net8.0\System.Text.Json.dll

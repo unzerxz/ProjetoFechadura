@@ -18,8 +18,6 @@ public class SalaController : ControllerBase
         _salaDao = new SalaDAO();
     }
 
-
-
     [HttpGet]
     public IActionResult Read()
     {
@@ -35,11 +33,12 @@ public class SalaController : ControllerBase
         return Ok(sala);
     }
 
-    [HttpGet("validarCredencial")]
-    public IActionResult ValidarCredencial([FromQuery] string credencialCartao = null, [FromQuery] int? credencialTeclado = null)
+    [HttpGet("validarEntradaSaida")]
+    public IActionResult ValidarEntradaSaida([FromQuery] int idSala, [FromQuery] string credencialCartao = null, [FromQuery] int? credencialTeclado = null)
     {
         int idFuncionario = -1;
 
+        // Validando a credencial do cartão ou do teclado
         if (!string.IsNullOrEmpty(credencialCartao))
         {
             idFuncionario = _salaDao.IsCredencialUsuarioCartaoValida(credencialCartao);
@@ -49,13 +48,50 @@ public class SalaController : ControllerBase
             idFuncionario = _salaDao.IsCredencialUsuarioTecladoValida(credencialTeclado.Value);
         }
 
-        if (idFuncionario != -1)
+        if (idFuncionario == -1)
         {
-            return Ok(new { Message = "Credencial válida", FuncionarioId = idFuncionario });
+            return Unauthorized(new { Message = "Credencial inválida" });
         }
 
-        return Unauthorized(new { Message = "Credencial inválida" });
+        // Verificando o status da sala
+        bool isSalaAtiva = _salaDao.IsSalaAtiva(idSala);
+        bool isSalaVazia = _salaDao.IsSalaVazia(idSala);
+
+        if (isSalaAtiva)
+        {
+            if (isSalaVazia)
+            {
+                // Sala vazia, abrir a sala para o funcionário
+                bool salaAberta = _salaDao.AbrirSala(idSala, idFuncionario);
+                if (salaAberta)
+                {
+                    return Ok(new { Message = "Sala aberta com sucesso", FuncionarioId = idFuncionario, SalaId = idSala });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Erro ao abrir a sala" });
+                }
+            }
+            else
+            {
+                // Sala ocupada, tentar fechar se o funcionário estiver ocupando a sala
+                bool salaFechada = _salaDao.FecharSala(idSala, idFuncionario);
+                if (salaFechada)
+                {
+                    return Ok(new { Message = "Sala fechada com sucesso", FuncionarioId = idFuncionario, SalaId = idSala });
+                }
+                else
+                {
+                    return Unauthorized(new { Message = "Não autorizado a fechar a sala", FuncionarioId = idFuncionario, SalaId = idSala });
+                }
+            }
+        }
+        else
+        {
+            return BadRequest(new { Message = "Sala não está ativa" });
+        }
     }
+
 
     [HttpPost]
     public IActionResult Post(Sala sala)
@@ -81,3 +117,4 @@ public class SalaController : ControllerBase
         return NoContent();
     }
 }
+

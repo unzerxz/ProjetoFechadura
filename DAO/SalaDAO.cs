@@ -195,45 +195,43 @@ public class SalaDAO
         }
     }
 
-    public int IsCredencialUsuarioTecladoValida(int credencialTeclado)
-{
-    int idFuncionario = -1;
+    public int IsCredencialUsuarioTecladoValida(int credencialTeclado){
+        int idFuncionario = -1;
 
-    try
-    {
-        _connection.Open();
-
-        const string query = "SELECT idFuncionario FROM bdFechadura.funcionario WHERE credencialTeclado = @CredencialTeclado;";
-
-        using var command = new MySqlCommand(query, _connection);
-        command.Parameters.AddWithValue("@CredencialTeclado", credencialTeclado);
-
-        using var reader = command.ExecuteReader();
-
-        if (reader.Read())
+        try
         {
-            idFuncionario = reader.GetInt32("idFuncionario");
+            _connection.Open();
+
+            const string query = "SELECT idFuncionario FROM bdFechadura.funcionario WHERE credencialTeclado = @CredencialTeclado;";
+
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@CredencialTeclado", credencialTeclado);
+
+            using var reader = command.ExecuteReader();
+
+            if (reader.Read())
+            {
+                idFuncionario = reader.GetInt32("idFuncionario");
+            }
         }
-    }
-    catch (MySqlException ex)
-    {
-        Console.WriteLine($"Erro do Banco: {ex.Message}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Erro desconhecido: {ex.Message}");
-    }
-    finally
-    {
-        _connection.Close();
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+        }
+        finally
+        {
+            _connection.Close();
+        }
+
+        return idFuncionario;
     }
 
-    return idFuncionario;
-}
 
-
-        public int IsCredencialUsuarioCartaoValida(string credencialCartao)
-    {
+    public int IsCredencialUsuarioCartaoValida(string credencialCartao){
         int idFuncionario = -1;
 
         try
@@ -266,6 +264,142 @@ public class SalaDAO
         }
 
         return idFuncionario;
+    }
+
+    public bool IsSalaAtiva(int idSala)
+{
+    try
+    {
+        _connection.Open();
+        const string query = "SELECT isAtivo FROM bdFechadura.sala WHERE idSala = @IdSala";
+        
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@IdSala", idSala);
+        
+        var result = command.ExecuteScalar();
+        
+        if (result != null && result != DBNull.Value)
+        {
+            return Convert.ToBoolean(result);
+        }
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return false; // Retorna false se houver um erro ou a sala não for encontrada
+}
+
+public bool IsSalaVazia(int idSala)
+{
+    try
+    {
+        _connection.Open();
+        const string query = "SELECT status FROM bdFechadura.sala WHERE idSala = @IdSala";
+        
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@IdSala", idSala);
+        
+        var result = command.ExecuteScalar();
+        
+        if (result != null && result != DBNull.Value)
+        {
+            return Convert.ToBoolean(result) == false; // Se o status for 0, significa que está vazia
+        }
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return false; // Retorna false se houver um erro ou a sala não for encontrada
+}
+
+public bool AbrirSala(int idSala, int idFuncionario)
+    {
+        try
+        {
+            _connection.Open();
+
+            const string query = @"
+                UPDATE bdFechadura.sala
+                SET funcionario_idFuncionario = @IdFuncionario, status = 1
+                WHERE idSala = @IdSala AND isAtivo = 1 AND status = 0;";
+
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@IdSala", idSala);
+            command.Parameters.AddWithValue("@IdFuncionario", idFuncionario);
+
+            int rowsAffected = command.ExecuteNonQuery();
+
+            return rowsAffected > 0; // Retorna true se a sala foi aberta com sucesso
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            _connection.Close();
+        }
+    }
+
+    public bool FecharSala(int idSala, int idFuncionario)
+    {
+        try
+        {
+            _connection.Open();
+
+            const string query = @"
+                UPDATE bdFechadura.sala
+                SET status = 0
+                WHERE idSala = @IdSala AND funcionario_idFuncionario = @IdFuncionario AND isAtivo = 1 AND status = 1;";
+
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@IdSala", idSala);
+            command.Parameters.AddWithValue("@IdFuncionario", idFuncionario);
+
+            int rowsAffected = command.ExecuteNonQuery();
+
+            return rowsAffected > 0; // Retorna true se a sala foi fechada com sucesso
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            _connection.Close();
+        }
     }
 
 }
