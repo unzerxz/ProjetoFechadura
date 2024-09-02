@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using ProjetoFechadura.Models;
@@ -9,6 +10,7 @@ using ProjetoFechadura.Repository;
 public class FuncionarioDao
 {
     private readonly MySqlConnection _connection;
+    private static readonly Random Random = new Random();
 
     public FuncionarioDao()
     {
@@ -210,5 +212,154 @@ public class FuncionarioDao
             _connection.Close();
         }
     }
+
+public bool IsCredencialPasswordExist(int credencialTeclado)
+{
+    bool exists = false;
+
+    try
+    {
+        _connection.Open();
+        const string query = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS credencial_status FROM funcionario WHERE credencialTeclado = @CredencialTeclado;";
+
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@CredencialTeclado", credencialTeclado);
+
+        // Execute the query and get the result
+        exists = Convert.ToBoolean(command.ExecuteScalar());
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return exists;
+}
+
+public bool IsCredencialCartaoExist(string credencialCartao)
+{
+    bool exists = false;
+
+    try
+    {
+        _connection.Open();
+        const string query = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS credencial_status FROM funcionario WHERE credencialCartao = @CredencialCartao;";
+
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@CredencialCartao", credencialCartao);
+
+        // Execute the query and get the result
+        exists = Convert.ToBoolean(command.ExecuteScalar());
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return exists;
+}
+
+public static string GenerateCredencialCartao(Funcionario funcionario)
+    {
+        if (funcionario == null) throw new ArgumentNullException(nameof(funcionario));
+
+        // Static prefix
+        string prefix = "SN792";
+
+        // First 3 letters of the employee's name
+        string nomePart = funcionario.Nome.Length >= 3 
+            ? funcionario.Nome.Substring(0, 3).ToUpper() 
+            : funcionario.Nome.ToUpper().PadRight(3, 'X'); // Fallback if name is shorter than 3 characters
+
+        // Perfil ID
+        string perfilPart = funcionario.Perfil_IdPerfil.ToString();
+
+        // Random 10 characters
+        string randomPart = GenerateRandomString(10);
+
+        // Combine all parts
+        string[] parts = { prefix, nomePart, perfilPart, "D" + randomPart };
+        string shuffledCredencialCartao = ShuffleParts(parts);
+
+        return shuffledCredencialCartao;
+    }
+
+    private static string GenerateRandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var stringBuilder = new StringBuilder(length);
+        for (int i = 0; i < length; i++)
+        {
+            stringBuilder.Append(chars[Random.Next(chars.Length)]);
+        }
+        return stringBuilder.ToString();
+    }
+
+    private static string ShuffleParts(string[] parts)
+    {
+        var random = new Random();
+        // Shuffle the array of parts
+        parts = parts.OrderBy(x => random.Next()).ToArray();
+        // Join the shuffled parts into a single string
+        return string.Join("", parts);
+    }
+
+    public static string GenerateRandomPassword()
+    {
+        const string digits = "0123456789";
+        var password = new char[6];
+
+        for (int i = 0; i < 6; i++)
+        {
+            password[i] = digits[Random.Next(digits.Length)];
+        }
+
+        return new string(password);
+    }
+
+        public string GenerateUniqueRandomPassword()
+    {
+        string password;
+
+        do
+        {
+            password = GenerateRandomPassword();
+        }
+        while (IsCredencialPasswordExist(int.Parse(password)));
+
+        return password;
+    }
+
+        public string GenerateUniqueCredencialCartao(Funcionario funcionario)
+    {
+        if (funcionario == null) throw new ArgumentNullException(nameof(funcionario));
+
+        string credencialCartao;
+
+        do
+        {
+            credencialCartao = GenerateCredencialCartao(funcionario);
+        }
+        while (IsCredencialCartaoExist(credencialCartao));
+
+        return credencialCartao;
+    }
+
 
 }
