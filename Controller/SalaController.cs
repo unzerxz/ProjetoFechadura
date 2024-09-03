@@ -13,11 +13,13 @@ public class SalaController : ControllerBase
 {
     private readonly SalaDAO _salaDao;
     private readonly RegistroDAO _registroDao;
+    private readonly FuncionarioDAO _funcionarioDao;
 
     public SalaController()
     {
         _salaDao = new SalaDAO();
         _registroDao = new RegistroDAO();
+        _funcionarioDao = new FuncionarioDAO();
     }
 
     [HttpGet]
@@ -36,7 +38,7 @@ public class SalaController : ControllerBase
     }
 
 [HttpGet("validarEntradaSaida")]
-public IActionResult ValidarEntradaSaida([FromQuery] int idSala, [FromQuery] string credencialCartao = null, [FromQuery] int? credencialTeclado = null)
+public IActionResult ValidarEntradaSaida([FromQuery] int idSala, [FromQuery] string ?credencialCartao = null, [FromQuery] int? credencialTeclado = null)
 {
     int idFuncionario = -1;
     int idRegistro = -1;
@@ -54,6 +56,14 @@ public IActionResult ValidarEntradaSaida([FromQuery] int idSala, [FromQuery] str
     if (idFuncionario == -1)
     {
         return Unauthorized(new { Message = "Credencial inválida" });
+    }
+
+    // Verificar se o funcionário está ativo
+    bool isFuncionarioAtivo = _funcionarioDao.IsFuncionarioAtivo(idFuncionario); // Adicione esta linha
+
+    if (!isFuncionarioAtivo) // Verifica se o funcionário não está ativo
+    {
+        return Unauthorized(new { Message = "Funcionário inativo" });
     }
 
     // Verificando o status da sala
@@ -106,8 +116,46 @@ public IActionResult ValidarEntradaSaida([FromQuery] int idSala, [FromQuery] str
     }
 }
 
+    [HttpPost("criarSala")]
+public IActionResult CriarSala([FromBody] string identificacaoSala)
+{
+    if (string.IsNullOrEmpty(identificacaoSala))
+    {
+        return BadRequest(new { Message = "Dados inválidos. Verifique a identificação da sala e o ID do funcionário." });
+    }
 
+    try
+    {
+        // Gerar uma credencial de sala única
+        string credencialSala = _salaDao.GenerateUniqueCredencialSala(identificacaoSala);
 
+        // Criar um novo objeto de Sala
+        var novaSala = new Sala
+        {
+            IdentificacaoSala = identificacaoSala,
+            Status = 0,  // Definir como ativa
+            CredencialSala = credencialSala,
+            IsAtivo = 1,  // Definir a sala como ativa
+            Funcionario_IdFuncionario = 0
+        };
+
+        // Salvar a nova sala no banco de dados
+        int salaId = _salaDao.Create(novaSala);
+
+        if (salaId > 0)
+        {
+            return Ok(new { Message = "Sala criada com sucesso", Sala = novaSala });
+        }
+        else
+        {
+            return StatusCode(500, new { Message = "Erro ao criar a sala" });
+        }
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { Message = "Erro ao criar a sala", Error = ex.Message });
+    }
+}
 
     [HttpPost]
     public IActionResult Post(Sala sala)

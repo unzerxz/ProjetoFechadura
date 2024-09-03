@@ -7,44 +7,46 @@ using MySql.Data.MySqlClient;
 using ProjetoFechadura.Models;
 using ProjetoFechadura.Repository;
 
-public class FuncionarioDao
+public class FuncionarioDAO
 {
     private readonly MySqlConnection _connection;
     private static readonly Random Random = new Random();
 
-    public FuncionarioDao()
+    public FuncionarioDAO()
     {
         _connection = MySqlConnectionFactory.GetConnection();
     }
 
     private static List<Funcionario?> ReadAll(MySqlCommand command)
+{
+    var funcionarios = new List<Funcionario?>();
+
+    using var reader = command.ExecuteReader();
+    if (!reader.HasRows) return funcionarios;
+    while (reader.Read())
     {
-        var funcionarios = new List<Funcionario?>();
-
-        using var reader = command.ExecuteReader();
-        if (!reader.HasRows) return funcionarios;
-        while (reader.Read())
+        var funcionario = new Funcionario
         {
-            var funcionario = new Funcionario
-            {
-                IdFuncionario = reader.GetInt32("idFuncionario"),
-                Nome = reader.GetString("nome"),
-                NomeUsuario = reader.GetString("nomeUsuario"),
-                CredencialCartao = reader.GetString("credencialCartao"),
-                CredencialTeclado = reader.GetInt32("credencialTeclado"),
-                Senha = reader.GetString("senha"),
-                Cargo_IdCargo = reader.GetInt32("cargo_idCargo"),
-                Perfil_IdPerfil = reader.GetInt32("perfil_idPerfil")
-            };
-            funcionarios.Add(funcionario);
-        }
-
-        return funcionarios;
+            IdFuncionario = reader.GetInt32("idFuncionario"),
+            Nome = reader.GetString("nome"),
+            NomeUsuario = reader.GetString("nomeUsuario"),
+            CredencialCartao = reader.GetString("credencialCartao"),
+            CredencialTeclado = reader.GetInt32("credencialTeclado"),
+            Senha = reader.GetString("senha"),
+            Cargo_IdCargo = reader.GetInt32("cargo_idCargo"),
+            Perfil_IdPerfil = reader.GetInt32("perfil_idPerfil"),
+            IsAtivo = reader.GetInt32("isAtivo")
+        };
+        funcionarios.Add(funcionario);
     }
+
+    return funcionarios;
+}
+
 
     public List<Funcionario?> Read()
     {
-        List<Funcionario?> funcionarios = null!;
+        List<Funcionario?>? funcionarios = null;
 
         try
         {
@@ -75,7 +77,7 @@ public class FuncionarioDao
 
     public Funcionario? ReadById(int id)
     {
-        Funcionario? funcionario = null!;
+        Funcionario? funcionario = null;
 
         try
         {
@@ -107,85 +109,89 @@ public class FuncionarioDao
     }
 
     public int Create(Funcionario funcionario)
+{
+    int id = 0;
+    try
     {
-        int id = 0;
-        try
-        {
-            _connection.Open();
-            const string query = "INSERT INTO funcionario (nome, nomeUsuario, credencialCartao, credencialTeclado, senha, cargo_idCargo, perfil_idPerfil) " +
-                     "VALUES (@Nome, @NomeUsuario, @CredencialCartao, @CredencialTeclado, @Senha, @CargoId, @PerfilId)";
+        _connection.Open();
+        const string query = "INSERT INTO funcionario (nome, nomeUsuario, credencialCartao, credencialTeclado, senha, cargo_idCargo, perfil_idPerfil, isAtivo) " +
+                 "VALUES (@Nome, @NomeUsuario, @CredencialCartao, @CredencialTeclado, @Senha, @CargoId, @PerfilId, @IsAtivo)";
 
-            using var command = new MySqlCommand(query, _connection);
-            command.Parameters.AddWithValue("@Nome", funcionario.Nome);
-            command.Parameters.AddWithValue("@NomeUsuario", funcionario.NomeUsuario);
-            command.Parameters.AddWithValue("@CredencialCartao", funcionario.CredencialCartao);
-            command.Parameters.AddWithValue("@CredencialTeclado", funcionario.CredencialTeclado);
-            command.Parameters.AddWithValue("@Senha", funcionario.Senha);
-            command.Parameters.AddWithValue("@CargoId", funcionario.Cargo_IdCargo);
-            command.Parameters.AddWithValue("@PerfilId", funcionario.Perfil_IdPerfil);
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@Nome", funcionario.Nome);
+        command.Parameters.AddWithValue("@NomeUsuario", funcionario.NomeUsuario);
+        command.Parameters.AddWithValue("@CredencialCartao", DBNull.Value); // Correção para valores nulos
+        command.Parameters.AddWithValue("@CredencialTeclado", DBNull.Value); // Correção para valores nulos
+        command.Parameters.AddWithValue("@Senha", funcionario.Senha);
+        command.Parameters.AddWithValue("@CargoId", 1); // Ajuste conforme o ID válido
+        command.Parameters.AddWithValue("@PerfilId", 1); // Ajuste conforme o ID válido
+        command.Parameters.AddWithValue("@IsAtivo", 0); // Correção para o valor booleano
 
-            command.ExecuteNonQuery();
-            id = (int)command.LastInsertedId;
-        }
-        catch (MySqlException ex)
-        {
-            Console.WriteLine($"Erro do Banco: {ex.Message} ");
-        }
-
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro desconhecido{ex.Message}");
-        }
-
-        finally
-        {
-            _connection.Close();
-        }
-        return id;
+        command.ExecuteNonQuery();
+        id = (int)command.LastInsertedId;
     }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+    return id;
+}
+
 
     public void Update(int id, Funcionario funcionario)
+{
+    try
     {
-        try
-        {
-            _connection.Open();
-            const string query = "UPDATE funcionario SET " +
-                     "Nome = @Nome, " +
-                     "NomeUsuario = @NomeUsuario, " +
-                     "credencialCartao = @CredencialCartao, " +
-                     "credencialTeclado = @CredencialTeclado, " +
-                     "senha = @Senha, " +
-                     "cargo_idCargo = @CargoId, " +
-                     "perfil_idPerfil = @PerfilId " +
-                     "WHERE idFuncionario = @IdFuncionario";
-            using var command = new MySqlCommand(query, _connection);
+        _connection.Open();
+        const string query = "UPDATE funcionario SET " +
+                 "nome = @Nome, " +
+                 "nomeUsuario = @NomeUsuario, " +
+                 "credencialCartao = @CredencialCartao, " +
+                 "credencialTeclado = @CredencialTeclado, " +
+                 "senha = @Senha, " +
+                 "cargo_idCargo = @CargoId, " +
+                 "perfil_idPerfil = @PerfilId, " +
+                 "isAtivo = @IsAtivo " +
+                 "WHERE idFuncionario = @IdFuncionario";
+        using var command = new MySqlCommand(query, _connection);
 
-            command.Parameters.AddWithValue("@Nome", funcionario.Nome);
-            command.Parameters.AddWithValue("@NomeUsuario", funcionario.NomeUsuario);
-            command.Parameters.AddWithValue("@CredencialCartao", funcionario.CredencialCartao);
-            command.Parameters.AddWithValue("@CredencialTeclado", funcionario.CredencialTeclado);
-            command.Parameters.AddWithValue("@Senha", funcionario.Senha);
-            command.Parameters.AddWithValue("@CargoId", funcionario.Cargo_IdCargo);
-            command.Parameters.AddWithValue("@PerfilId", funcionario.Perfil_IdPerfil);
+        command.Parameters.AddWithValue("@Nome", funcionario.Nome);
+        command.Parameters.AddWithValue("@NomeUsuario", funcionario.NomeUsuario);
+        command.Parameters.AddWithValue("@CredencialCartao", funcionario.CredencialCartao);
+        command.Parameters.AddWithValue("@CredencialTeclado", funcionario.CredencialTeclado);
+        command.Parameters.AddWithValue("@Senha", funcionario.Senha);
+        command.Parameters.AddWithValue("@CargoId", funcionario.Cargo_IdCargo);
+        command.Parameters.AddWithValue("@PerfilId", funcionario.Perfil_IdPerfil);
+        command.Parameters.AddWithValue("@IsAtivo", funcionario.IsAtivo);
+        command.Parameters.AddWithValue("@IdFuncionario", id);
 
-            command.ExecuteNonQuery();
+        command.ExecuteNonQuery();
 
-        }
-        catch (MySqlException ex)
-        {
-            Console.WriteLine($"Erro do Banco: {ex.Message} ");
-        }
-
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro desconhecido{ex.Message}");
-        }
-
-        finally
-        {
-            _connection.Close();
-        }
     }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message} ");
+    }
+
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+
+    finally
+    {
+        _connection.Close();
+    }
+}
+
 
     public void Delete(int idFuncionario)
     {
@@ -333,7 +339,7 @@ public static string GenerateCredencialCartao(Funcionario funcionario)
         return new string(password);
     }
 
-        public string GenerateUniqueRandomPassword()
+        public string GenerateUniqueRandomPassword()//Function used in the controller
     {
         string password;
 
@@ -346,7 +352,7 @@ public static string GenerateCredencialCartao(Funcionario funcionario)
         return password;
     }
 
-        public string GenerateUniqueCredencialCartao(Funcionario funcionario)
+        public string GenerateUniqueCredencialCartao(Funcionario funcionario)//Function used in the controller
     {
         if (funcionario == null) throw new ArgumentNullException(nameof(funcionario));
 
@@ -360,6 +366,41 @@ public static string GenerateCredencialCartao(Funcionario funcionario)
 
         return credencialCartao;
     }
+
+    public bool IsFuncionarioAtivo(int idFuncionario)
+{
+    bool isActive = false;
+
+    try
+    {
+        _connection.Open();
+        const string query = "SELECT isAtivo FROM funcionario WHERE idFuncionario = @IdFuncionario";
+
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@IdFuncionario", idFuncionario);
+
+        var result = command.ExecuteScalar();
+        if (result != null && Convert.ToBoolean(result) == true)
+        {
+            isActive = true;
+        }
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine($"Erro do Banco: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro desconhecido: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return isActive;
+}
+
 
 
 }

@@ -8,8 +8,8 @@ namespace ProjetoFechadura.Models
 {
     public class Cargo
     {
-        [Column("idCargo")]
-        public int IdCargo { get; set; }
+        [Column("idCargo")] // 0 -> sentinela = "Indefinido"
+        public int IdCargo { get; set; } 
 
         [Column("nomeCargo")]
         public string NomeCargo { get; set; }

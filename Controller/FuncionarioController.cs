@@ -11,11 +11,11 @@ namespace ProjetoFechadura.Controller;
 [Route("api/[controller]")]
 public class FuncionarioController : ControllerBase
 {
-    private readonly FuncionarioDao _funcionarioDao;
+    private readonly FuncionarioDAO _funcionarioDao;
 
     public FuncionarioController()
     {
-        _funcionarioDao = new FuncionarioDao();
+        _funcionarioDao = new FuncionarioDAO();
     }
 
     [HttpGet]
@@ -56,4 +56,57 @@ public class FuncionarioController : ControllerBase
         _funcionarioDao.Delete(id);
         return NoContent();
     }
+
+   [HttpPost("confirmacaoFuncionario")]
+public IActionResult ConfirmacaoFuncionario(
+    [FromQuery] int idFuncionario, 
+    [FromQuery] int novoCargoId, 
+    [FromQuery] int novoPerfilId)
+{
+    if (idFuncionario <= 0)
+    {
+        return BadRequest(new { Message = "ID do Funcionário inválido" });
+    }
+
+    try
+    {
+        // Recuperar os dados atuais do funcionário pelo ID
+        var funcionarioAtual = _funcionarioDao.ReadById(idFuncionario);
+
+        if (funcionarioAtual == null)
+        {
+            return NotFound(new { Message = "Funcionário não encontrado" });
+        }
+
+        // Garantir que o funcionário não está atualmente ativo
+        if (funcionarioAtual.IsAtivo == 1)
+        {
+            return BadRequest(new { Message = "Funcionário já está ativo" });
+        }
+
+        // Gerar uma credencial de cartão única
+        string credencialCartao = _funcionarioDao.GenerateUniqueCredencialCartao(funcionarioAtual);
+
+        // Gerar uma senha de teclado única
+        int credencialTeclado = int.Parse(_funcionarioDao.GenerateUniqueRandomPassword());
+
+        // Atualizar os campos para ativar o funcionário
+        funcionarioAtual.IsAtivo = 1;  // Ativar o funcionário
+        funcionarioAtual.CredencialCartao = credencialCartao;  // Definir nova credencial de cartão
+        funcionarioAtual.CredencialTeclado = credencialTeclado;  // Definir nova senha de teclado
+        funcionarioAtual.Cargo_IdCargo = novoCargoId;  // Atualizar o cargo
+        funcionarioAtual.Perfil_IdPerfil = novoPerfilId;  // Atualizar o perfil
+
+        // Atualizar o funcionário no banco de dados
+        _funcionarioDao.Update(idFuncionario, funcionarioAtual);
+
+        return Ok(new { Message = "Funcionário promovido e ativado com sucesso", Funcionario = funcionarioAtual });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { Message = "Erro ao promover o funcionário", Error = ex.Message });
+    }
+}
+
+
 }

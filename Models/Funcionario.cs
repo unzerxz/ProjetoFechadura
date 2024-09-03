@@ -8,7 +8,7 @@ namespace ProjetoFechadura.Models
 {
     public class Funcionario
     {
-        [Column("idFuncionario")]
+        [Column("idFuncionario")] // 0 -> sentinela
         public int IdFuncionario { get; set; }
 
         [Column("Nome")]
@@ -26,11 +26,14 @@ namespace ProjetoFechadura.Models
         [Column("senha")]
         public string Senha { get; set; }
 
+        [Column("isAtivo")]
+        public int IsAtivo { get; set; }
+
         [Column("cargo_idCargo")]
         public int Cargo_IdCargo { get; set; }
 
         [Column("perfil_idPerfil")]
-        public int Perfil_IdPerfil { get; set; }
+        public int Perfil_IdPerfil { get; set; } // 0 -> sentinela, 1 -> usuario, 2 -> admin
 
     }
 }

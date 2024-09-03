@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using ProjetoFechadura.Models;
@@ -9,6 +10,7 @@ using ProjetoFechadura.Repository;
 public class SalaDAO
 {
     private readonly MySqlConnection _connection;
+    private static readonly Random Random = new Random();
 
     public SalaDAO()
     {
@@ -400,6 +402,85 @@ public bool AbrirSala(int idSala, int idFuncionario)
         {
             _connection.Close();
         }
+    }
+
+    public string GenerateUniqueCredencialSala(string identificacaoSala) //Function used in the controller
+    {
+        if (identificacaoSala == null) throw new ArgumentNullException(nameof(identificacaoSala));
+
+        string credencialSala;
+
+        do
+        {
+            credencialSala = GenerateCredencialSala(identificacaoSala);
+        }
+        while (IsCredencialSalaExist(credencialSala));
+
+        return credencialSala;
+    }
+
+    private string GenerateCredencialSala(string identificacaoSala)
+    {
+        // Static prefix
+        string prefix = "792SN";
+
+        // Identification of the room
+        string identificacaoPart = identificacaoSala.Length > 0
+            ? identificacaoSala.ToUpper()
+            : "XXXX"; // Fallback if identificacaoSala is empty
+
+        // Static "A_" part
+        string staticPart = "A_";
+
+        // Random characters (up to make the total length 20)
+        int randomLength = 20 - (prefix.Length + identificacaoPart.Length + staticPart.Length);
+        string randomPart = GenerateRandomString(randomLength);
+
+        // Combine parts
+        string credencialSala = $"{prefix}{identificacaoPart}{staticPart}{randomPart}";
+
+        return credencialSala;
+    }
+
+    private string GenerateRandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var stringBuilder = new StringBuilder(length);
+        for (int i = 0; i < length; i++)
+        {
+            stringBuilder.Append(chars[Random.Next(chars.Length)]);
+        }
+        return stringBuilder.ToString();
+    }
+
+    private bool IsCredencialSalaExist(string credencialSala)
+    {
+        bool exists = false;
+
+        try
+        {
+            _connection.Open();
+            const string query = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS credencial_status FROM sala WHERE credencialSala = @CredencialSala;";
+
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@CredencialSala", credencialSala);
+
+            exists = Convert.ToBoolean(command.ExecuteScalar());
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+        }
+        finally
+        {
+            _connection.Close();
+        }
+
+        return exists;
     }
 
 }
