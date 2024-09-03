@@ -26,7 +26,7 @@ public class PerfilDAO
             var perfil = new Perfil
             {
                 IdPerfil = reader.GetInt32("idPerfil"),
-                TipoPerfil = reader.GetInt32("tipoPerfil")
+                TipoPerfil = reader.GetString("tipoPerfil")
             };
             perfis.Add(perfil);
         }

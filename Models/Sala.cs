@@ -14,7 +14,7 @@ namespace ProjetoFechadura.Models
         [Column("identificacaoSala")]
         public string IdentificacaoSala { get;set; }
 
-        [Column("status")] // 1 -> Ocupada/0 -> Não ocupada
+        [Column("status")] // 1 -> Ocupada /0 -> Não ocupada
         public int Status { get; set; }
 
         [Column("credencialSala")]

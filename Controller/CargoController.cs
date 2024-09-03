@@ -43,7 +43,7 @@ public class CargoController : ControllerBase
     [HttpPut("{id:int}")]
     public IActionResult Put(int id, [FromBody] Cargo cargo)
     {
-        if (id != cargo.IdCargo) return BadRequest();
+        if (id != cargo.IdCargo || id == 1) return BadRequest();
         if (_cargoDao.ReadById(id) == null) return NotFound();
         _cargoDao.Update(id, cargo);
         return NoContent();
@@ -52,7 +52,7 @@ public class CargoController : ControllerBase
     [HttpDelete("{id:int}")]
     public IActionResult Delete(int id)
     {
-        if (_cargoDao.ReadById(id) == null) return NotFound();
+        if (_cargoDao.ReadById(id) == null || id == 1) return NotFound();
         _cargoDao.Delete(id);
         return NoContent();
     }

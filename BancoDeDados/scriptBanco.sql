@@ -29,7 +29,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bdFechadura`.`perfil` (
   `idPerfil` INT NOT NULL AUTO_INCREMENT,
-  `tipoPerfil` BIT(1) NOT NULL,
+  `tipoPerfil` VARCHAR(15) NOT NULL,
   PRIMARY KEY (`idPerfil`))
 ENGINE = InnoDB;
 
@@ -109,21 +109,21 @@ CREATE TABLE IF NOT EXISTS `bdFechadura`.`registro` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
- -- Insere o cargo 'indefinido' com id 0
-INSERT INTO `bdFechadura`.`cargo` (`idCargo`, `nomeCargo`)
-VALUES (0, 'indefinido');
-
--- Insere o perfil 'indefinido' com id 0
-INSERT INTO `bdFechadura`.`perfil` (`idPerfil`, `tipoPerfil`)
-VALUES (0, 0);
-
--- Insere o funcionário com id 0
-INSERT INTO `bdFechadura`.`funcionario` 
-    (`idFuncionario`, `nome`, `nomeUsuario`, `credencialCartao`, `credencialTeclado`, `senha`, `isAtivo`, `cargo_idCargo`, `perfil_idPerfil`)
-VALUES 
-    (0, 'Sentinela', 'sentinela', NULL, NULL, 'senha', 1, 0, 0);
-
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+-- Insere o cargo 'indefinido' com id 1
+INSERT INTO `bdFechadura`.`cargo` (`idCargo`, `nomeCargo`)
+VALUES (1, 'indefinido');
+
+-- Insere o perfil 'indefinido' com id 1
+INSERT INTO `bdFechadura`.`perfil` (`idPerfil`, `tipoPerfil`)
+VALUES (1, 'indefinido'), (2, 'usuario'), (3, 'administrador');
+
+-- Insere o funcionario 'sentinela' com id 1
+INSERT INTO `bdFechadura`.`funcionario` 
+    (`idFuncionario`, `nome`, `nomeUsuario`, `credencialCartao`, `credencialTeclado`, `senha`, `isAtivo`, `cargo_idCargo`, `perfil_idPerfil`)
+VALUES 
+    (1, 'sentinela', 'sentinela', NULL, NULL, 'senha', 1, 1, 1);

@@ -136,7 +136,7 @@ public IActionResult CriarSala([FromBody] string identificacaoSala)
             Status = 0,  // Definir como ativa
             CredencialSala = credencialSala,
             IsAtivo = 1,  // Definir a sala como ativa
-            Funcionario_IdFuncionario = 0
+            Funcionario_IdFuncionario = 1
         };
 
         // Salvar a nova sala no banco de dados
@@ -180,5 +180,48 @@ public IActionResult CriarSala([FromBody] string identificacaoSala)
         _salaDao.Delete(id);
         return NoContent();
     }
+
+    [HttpGet("autorizar-entrada")]
+    public ApiResponse AutorizarEntrada(int idSala, string credencial)
+    {
+        if (!_salaDao.IsSalaAtiva(idSala))
+        {
+            return new ApiResponse
+            {
+                StatusCode = 403,
+                Message = "A sala está inativa."
+            };
+        }
+
+        if (_salaDao.IsSalaVazia(idSala))
+        {
+            return new ApiResponse
+            {
+                StatusCode = 403,
+                Message = "A sala está desocupada. Não é possível entrar."
+            };
+        }
+
+        if (!_salaDao.IsCredencialCorreta(idSala, credencial))
+        {
+            return new ApiResponse
+            {
+                StatusCode = 401,
+                Message = "Credencial inválida."
+            };
+        }
+
+        return new ApiResponse
+        {
+            StatusCode = 200,
+            Message = "Entrada autorizada."
+        };
+    }
+}
+
+public class ApiResponse
+{
+    public int StatusCode { get; set; }
+    public string Message { get; set; }
 }
 

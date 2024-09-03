@@ -17,7 +17,7 @@ public class FuncionarioDAO
         _connection = MySqlConnectionFactory.GetConnection();
     }
 
-    private static List<Funcionario?> ReadAll(MySqlCommand command)
+   private static List<Funcionario?> ReadAll(MySqlCommand command)
 {
     var funcionarios = new List<Funcionario?>();
 
@@ -27,21 +27,22 @@ public class FuncionarioDAO
     {
         var funcionario = new Funcionario
         {
-            IdFuncionario = reader.GetInt32("idFuncionario"),
-            Nome = reader.GetString("nome"),
-            NomeUsuario = reader.GetString("nomeUsuario"),
-            CredencialCartao = reader.GetString("credencialCartao"),
-            CredencialTeclado = reader.GetInt32("credencialTeclado"),
-            Senha = reader.GetString("senha"),
-            Cargo_IdCargo = reader.GetInt32("cargo_idCargo"),
-            Perfil_IdPerfil = reader.GetInt32("perfil_idPerfil"),
-            IsAtivo = reader.GetInt32("isAtivo")
+            IdFuncionario = reader.IsDBNull(reader.GetOrdinal("idFuncionario")) ? 0 : reader.GetInt32("idFuncionario"),
+            Nome = reader.IsDBNull(reader.GetOrdinal("nome")) ? string.Empty : reader.GetString("nome"),
+            NomeUsuario = reader.IsDBNull(reader.GetOrdinal("nomeUsuario")) ? string.Empty : reader.GetString("nomeUsuario"),
+            CredencialCartao = reader.IsDBNull(reader.GetOrdinal("credencialCartao")) ? string.Empty : reader.GetString("credencialCartao"),
+            CredencialTeclado = reader.IsDBNull(reader.GetOrdinal("credencialTeclado")) ? 0 : reader.GetInt32("credencialTeclado"),
+            Senha = reader.IsDBNull(reader.GetOrdinal("senha")) ? string.Empty : reader.GetString("senha"),
+            Cargo_IdCargo = reader.IsDBNull(reader.GetOrdinal("cargo_idCargo")) ? 0 : reader.GetInt32("cargo_idCargo"),
+            Perfil_IdPerfil = reader.IsDBNull(reader.GetOrdinal("perfil_idPerfil")) ? 0 : reader.GetInt32("perfil_idPerfil"),
+            IsAtivo = reader.IsDBNull(reader.GetOrdinal("isAtivo")) ? 0 : reader.GetInt32("isAtivo")
         };
         funcionarios.Add(funcionario);
     }
 
     return funcionarios;
 }
+
 
 
     public List<Funcionario?> Read()
@@ -72,7 +73,9 @@ public class FuncionarioDAO
             _connection.Close();
         }
 
+#pragma warning disable CS8603 // Possible null reference return.
         return funcionarios;
+#pragma warning restore CS8603 // Possible null reference return.
     }
 
     public Funcionario? ReadById(int id)
@@ -82,7 +85,7 @@ public class FuncionarioDAO
         try
         {
             _connection.Open();
-            var query = "SELECT * FROM bdfechadura.funcionario Where idFuncionario = @Id";
+            var query = "SELECT * FROM bdfechadura.funcionario WHERE idFuncionario = @Id";
 
             var command = new MySqlCommand(query, _connection);
             command.Parameters.AddWithValue("@Id", id);
@@ -115,7 +118,7 @@ public class FuncionarioDAO
     {
         _connection.Open();
         const string query = "INSERT INTO funcionario (nome, nomeUsuario, credencialCartao, credencialTeclado, senha, cargo_idCargo, perfil_idPerfil, isAtivo) " +
-                 "VALUES (@Nome, @NomeUsuario, @CredencialCartao, @CredencialTeclado, @Senha, @CargoId, @PerfilId, @IsAtivo)";
+                 "VALUES (@Nome, @NomeUsuario, @CredencialCartao, @CredencialTeclado, @Senha, 1, 1, 0)";
 
         using var command = new MySqlCommand(query, _connection);
         command.Parameters.AddWithValue("@Nome", funcionario.Nome);
@@ -144,7 +147,6 @@ public class FuncionarioDAO
     }
     return id;
 }
-
 
     public void Update(int id, Funcionario funcionario)
 {

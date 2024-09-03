@@ -28,9 +28,13 @@ public class FuncionarioController : ControllerBase
     [HttpGet("{id:int}")]
     public IActionResult ReadById(int id)
     {
-        var funcionario = _funcionarioDao.ReadById(id);
-        if (funcionario == null) return NotFound();
-        return Ok(funcionario);
+        if (id != 1){
+            var funcionario = _funcionarioDao.ReadById(id);
+            if (funcionario == null) return NotFound();
+            return Ok(funcionario);
+        }
+
+        return NotFound();
     }
 
     [HttpPost]
@@ -43,7 +47,7 @@ public class FuncionarioController : ControllerBase
     [HttpPut("{id:int}")]
     public IActionResult Put(int id, [FromBody] Funcionario funcionario)
     {
-        if (id != funcionario.IdFuncionario) return BadRequest();
+        if (id != funcionario.IdFuncionario || id == 1) return BadRequest();
         if (_funcionarioDao.ReadById(id) == null) return NotFound();
         _funcionarioDao.Update(id, funcionario);
         return NoContent();
@@ -63,7 +67,7 @@ public IActionResult ConfirmacaoFuncionario(
     [FromQuery] int novoCargoId, 
     [FromQuery] int novoPerfilId)
 {
-    if (idFuncionario <= 0)
+    if (idFuncionario <= 1)
     {
         return BadRequest(new { Message = "ID do Funcionário inválido" });
     }

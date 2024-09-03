@@ -483,4 +483,27 @@ public bool AbrirSala(int idSala, int idFuncionario)
         return exists;
     }
 
+    public bool IsCredencialCorreta(int idSala, string credencial)
+    {
+        try
+        {
+            _connection.Open();
+            const string query = "SELECT COUNT(1) FROM sala WHERE idSala = @IdSala AND credencialSala = @Credencial";
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@IdSala", idSala);
+            command.Parameters.AddWithValue("@Credencial", credencial);
+
+            return Convert.ToInt32(command.ExecuteScalar()) > 0;
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            _connection.Close();
+        }
+    }
+
 }
