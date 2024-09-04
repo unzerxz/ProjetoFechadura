@@ -403,6 +403,42 @@ public static string GenerateCredencialCartao(Funcionario funcionario)
     return isActive;
 }
 
+public int AuthenticateUser(string nomeUsuario, string senha)
+    {
+        int idFuncionario = 0;
+
+        try
+        {
+            _connection.Open();
+            const string query = "SELECT idFuncionario FROM funcionario WHERE nomeUsuario = @NomeUsuario AND senha = @Senha AND isAtivo = 1";
+
+            using var command = new MySqlCommand(query, _connection);
+            command.Parameters.AddWithValue("@NomeUsuario", nomeUsuario);
+            command.Parameters.AddWithValue("@Senha", senha);
+
+            var result = command.ExecuteScalar();
+            if (result != null)
+            {
+                idFuncionario = Convert.ToInt32(result);
+            }
+        }
+        catch (MySqlException ex)
+        {
+            Console.WriteLine($"Erro do Banco: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro desconhecido: {ex.Message}");
+        }
+        finally
+        {
+            _connection.Close();
+        }
+
+        return idFuncionario;
+    }
+
+
 
 
 }

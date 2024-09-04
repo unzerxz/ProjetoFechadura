@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoFechadura.Models;
 
@@ -19,6 +20,7 @@ public class CargoController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult Read()
     {
         var cargos = _cargoDao.Read();
@@ -26,6 +28,7 @@ public class CargoController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public IActionResult ReadById(int id)
     {
         var cargo = _cargoDao.ReadById(id);
@@ -34,6 +37,7 @@ public class CargoController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public IActionResult Post(Cargo cargo)
     {
         _cargoDao.Create(cargo);
@@ -41,6 +45,7 @@ public class CargoController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize]
     public IActionResult Put(int id, [FromBody] Cargo cargo)
     {
         if (id != cargo.IdCargo || id == 1) return BadRequest();
@@ -50,6 +55,7 @@ public class CargoController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize]
     public IActionResult Delete(int id)
     {
         if (_cargoDao.ReadById(id) == null || id == 1) return NotFound();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoFechadura.Models;
 
@@ -19,6 +20,7 @@ public class PerfilController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult Read()
     {
         var perfis = _perfilDao.Read();
@@ -26,6 +28,7 @@ public class PerfilController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public IActionResult ReadById(int id)
     {
         if(id != 1){
@@ -38,6 +41,7 @@ public class PerfilController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public IActionResult Post(Perfil perfil)
     {
         _perfilDao.Create(perfil);
@@ -45,6 +49,7 @@ public class PerfilController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize]
     public IActionResult Put(int id, [FromBody] Perfil perfil)
     {
         if (id != perfil.IdPerfil || id == 1) return BadRequest();
@@ -54,6 +59,7 @@ public class PerfilController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize]
     public IActionResult Delete(int id)
     {
         if (_perfilDao.ReadById(id) == null || id == 1) return NotFound();

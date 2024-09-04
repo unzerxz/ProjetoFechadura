@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoFechadura.Models;
 
@@ -23,6 +24,7 @@ public class SalaController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult Read()
     {
         var salas = _salaDao.Read();
@@ -30,6 +32,7 @@ public class SalaController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public IActionResult ReadById(int id)
     {
         var sala = _salaDao.ReadById(id);
@@ -117,6 +120,7 @@ public IActionResult ValidarEntradaSaida([FromQuery] int idSala, [FromQuery] str
 }
 
     [HttpPost("criarSala")]
+    [Authorize]
 public IActionResult CriarSala([FromBody] string identificacaoSala)
 {
     if (string.IsNullOrEmpty(identificacaoSala))
@@ -158,6 +162,7 @@ public IActionResult CriarSala([FromBody] string identificacaoSala)
 }
 
     [HttpPost]
+    [Authorize]
     public IActionResult Post(Sala sala)
     {
         _salaDao.Create(sala);
