@@ -126,4 +126,5 @@ VALUES (1, 'indefinido'), (2, 'usuario'), (3, 'administrador');
 INSERT INTO `bdFechadura`.`funcionario` 
     (`idFuncionario`, `nome`, `nomeUsuario`, `credencialCartao`, `credencialTeclado`, `senha`, `isAtivo`, `cargo_idCargo`, `perfil_idPerfil`)
 VALUES 
-    (1, 'sentinela', 'sentinela', NULL, NULL, 'senha', 1, 1, 1);
+    (1, 'sentinela', 'sentinela', NULL, NULL, 'senha', 1, 1, 1),
+    (2, 'admin', 'admin', NULL, NULL, '123456', 1, 1, 3);

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoFechadura.Models;
 
-namespace ProjetoFechadura.Controller
+namespace ProjetoFechadura.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -22,7 +22,7 @@ namespace ProjetoFechadura.Controller
             _funcionarioDao = new FuncionarioDAO();
         }
 
-        
+        // Endpoint para obter todos os funcionários
         [HttpGet]
         [Authorize]
         public IActionResult Read()
@@ -31,6 +31,7 @@ namespace ProjetoFechadura.Controller
             return Ok(funcionarios);
         }
 
+        // Endpoint para obter funcionário por ID
         [HttpGet("{id:int}")]
         [Authorize]
         public IActionResult ReadById(int id)
@@ -45,6 +46,7 @@ namespace ProjetoFechadura.Controller
             return NotFound();
         }
 
+        // Endpoint para criar um novo funcionário
         [HttpPost]
         public IActionResult Post(Funcionario funcionario)
         {
@@ -52,6 +54,7 @@ namespace ProjetoFechadura.Controller
             return CreatedAtAction(nameof(ReadById), new { id = funcionario.IdFuncionario }, funcionario);
         }
 
+        // Endpoint para atualizar um funcionário existente
         [HttpPut("{id:int}")]
         [Authorize]
         public IActionResult Put(int id, [FromBody] Funcionario funcionario)
@@ -62,6 +65,7 @@ namespace ProjetoFechadura.Controller
             return NoContent();
         }
 
+        // Endpoint para deletar um funcionário
         [HttpDelete("{id:int}")]
         [Authorize]
         public IActionResult Delete(int id)
@@ -72,57 +76,82 @@ namespace ProjetoFechadura.Controller
         }
 
         [HttpPost("confirmacaoFuncionario")]
-        [Authorize]
-        public IActionResult ConfirmacaoFuncionario(
-            [FromQuery] int idFuncionario,
-            [FromQuery] int novoCargoId,
-            [FromQuery] int novoPerfilId)
+[Authorize]
+public IActionResult ConfirmacaoFuncionario(
+    [FromQuery] int idFuncionario,
+    [FromQuery] int novoCargoId,
+    [FromQuery] int novoPerfilId)
+{
+    if (idFuncionario <= 1)
+    {
+        return BadRequest(new { Message = "ID do Funcionário inválido" });
+    }
+
+    try
+    {
+        // Recuperar o id do validador do token JWT
+        var validadorIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+        if (validadorIdClaim == null)
         {
-            if (idFuncionario <= 1)
-            {
-                return BadRequest(new { Message = "ID do Funcionário inválido" });
-            }
-
-            try
-            {
-                // Recuperar os dados atuais do funcionário pelo ID
-                var funcionarioAtual = _funcionarioDao.ReadById(idFuncionario);
-
-                if (funcionarioAtual == null)
-                {
-                    return NotFound(new { Message = "Funcionário não encontrado" });
-                }
-
-                // Garantir que o funcionário não está atualmente ativo
-                if (funcionarioAtual.IsAtivo == 1)
-                {
-                    return BadRequest(new { Message = "Funcionário já está ativo" });
-                }
-
-                // Gerar uma credencial de cartão única
-                string credencialCartao = _funcionarioDao.GenerateUniqueCredencialCartao(funcionarioAtual);
-
-                // Gerar uma senha de teclado única
-                int credencialTeclado = int.Parse(_funcionarioDao.GenerateUniqueRandomPassword());
-
-                // Atualizar os campos para ativar o funcionário
-                funcionarioAtual.IsAtivo = 1;  // Ativar o funcionário
-                funcionarioAtual.CredencialCartao = credencialCartao;  // Definir nova credencial de cartão
-                funcionarioAtual.CredencialTeclado = credencialTeclado;  // Definir nova senha de teclado
-                funcionarioAtual.Cargo_IdCargo = novoCargoId;  // Atualizar o cargo
-                funcionarioAtual.Perfil_IdPerfil = novoPerfilId;  // Atualizar o perfil
-
-                // Atualizar o funcionário no banco de dados
-                _funcionarioDao.Update(idFuncionario, funcionarioAtual);
-
-                return Ok(new { Message = "Funcionário promovido e ativado com sucesso", Funcionario = funcionarioAtual });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "Erro ao promover o funcionário", Error = ex.Message });
-            }
+            return Unauthorized(new { Message = "Token inválido ou não autorizado" });
         }
 
+        int validadorId = int.Parse(validadorIdClaim.Value);
+
+        // Recuperar os dados do validador pelo ID
+        var validador = _funcionarioDao.ReadById(validadorId);
+
+        if (validador == null)
+        {
+            return NotFound(new { Message = "Validador não encontrado" });
+        }
+
+        // Garantir que o validador tem o perfil adm (perfilId = 3)
+        if (validador.Perfil_IdPerfil != 3)
+        {
+            return BadRequest(new { Message = "Usuário não autorizado para promover funcionários" });
+        }
+
+        // Recuperar os dados atuais do funcionário pelo ID
+        var funcionarioAtual = _funcionarioDao.ReadById(idFuncionario);
+
+        if (funcionarioAtual == null)
+        {
+            return NotFound(new { Message = "Funcionário não encontrado" });
+        }
+
+        // Garantir que o funcionário não está atualmente ativo
+        if (funcionarioAtual.IsAtivo == 1)
+        {
+            return BadRequest(new { Message = "Funcionário já está ativo" });
+        }
+
+        // Gerar uma credencial de cartão única
+        string credencialCartao = _funcionarioDao.GenerateUniqueCredencialCartao(funcionarioAtual);
+
+        // Gerar uma senha de teclado única
+        int credencialTeclado = int.Parse(_funcionarioDao.GenerateUniqueRandomPassword());
+
+        // Atualizar os campos para ativar o funcionário
+        funcionarioAtual.IsAtivo = 1;  // Ativar o funcionário
+        funcionarioAtual.CredencialCartao = credencialCartao;  // Definir nova credencial de cartão
+        funcionarioAtual.CredencialTeclado = credencialTeclado;  // Definir nova senha de teclado
+        funcionarioAtual.Cargo_IdCargo = novoCargoId;  // Atualizar o cargo
+        funcionarioAtual.Perfil_IdPerfil = novoPerfilId;  // Atualizar o perfil
+
+        // Atualizar o funcionário no banco de dados
+        _funcionarioDao.Update(idFuncionario, funcionarioAtual);
+
+        return Ok(new { Message = "Funcionário promovido e ativado com sucesso", Funcionario = funcionarioAtual });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { Message = "Erro ao promover o funcionário", Error = ex.Message });
+    }
+}
+
+
+        // Endpoint de login que gera um token JWT
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
@@ -132,15 +161,18 @@ namespace ProjetoFechadura.Controller
             }
 
             int idFuncionario = _funcionarioDao.AuthenticateUser(request.NomeUsuario, request.Senha);
-
-            if (idFuncionario == 0)
+            if (idFuncionario == 1)
             {
                 return Unauthorized(new { Message = "Nome de usuário ou senha inválidos" });
             }
 
-            // Gerar o token JWT
-            var token = GenerateJwtToken(idFuncionario);
+            var funcionario = _funcionarioDao.ReadById(idFuncionario);
+            if (funcionario == null || funcionario.IsAtivo != 1)
+            {
+                return Unauthorized(new { Message = "Usuário não está ativo no sistema" });
+            }
 
+            var token = GenerateJwtToken(idFuncionario);
             return Ok(new { Token = token });
         }
 
@@ -157,8 +189,6 @@ namespace ProjetoFechadura.Controller
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: null,
-                audience: null,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds);
@@ -167,6 +197,7 @@ namespace ProjetoFechadura.Controller
         }
     }
 
+    // Classe de request para o login
     public class LoginRequest
     {
         public string NomeUsuario { get; set; }
