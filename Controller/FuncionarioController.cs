@@ -15,13 +15,39 @@ namespace ProjetoFechadura.Controllers
     public class FuncionarioController : ControllerBase
     {
         private readonly FuncionarioDAO _funcionarioDao;
-        private readonly string _jwtSecret = "vX0/Yt+K2@J3dN5r4K8kzG$9XbFs5Wq3p!zC&6L7L8O2H9I0J0";
+            private readonly string _jwtSecret;
+    private readonly string _jwtIssuer;
+    private readonly string _jwtAudience;
 
-        public FuncionarioController()
+    public FuncionarioController(IConfiguration configuration)
+    {
+        _funcionarioDao = new FuncionarioDAO();
+        _jwtSecret = configuration.GetValue<string>("JwtSettings:SecretKey");
+        _jwtIssuer = configuration.GetValue<string>("JwtSettings:Issuer");
+        _jwtAudience = configuration.GetValue<string>("JwtSettings:Audience");
+    }
+
+    private string GenerateJwtToken(Funcionario funcionario)
+    {
+        var claims = new[]
         {
-            _funcionarioDao = new FuncionarioDAO();
-        }
+            new Claim(JwtRegisteredClaimNames.Sub, funcionario.IdFuncionario.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
 
+        var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSecret));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtIssuer,
+            audience: _jwtAudience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
         // Endpoint para obter todos os funcionários
         [HttpGet]
         [Authorize]
@@ -31,7 +57,7 @@ namespace ProjetoFechadura.Controllers
             return Ok(funcionarios);
         }
 
-        // Endpoint para obter funcionário por ID
+       // Endpoint para obter funcionário por ID
         [HttpGet("{id:int}")]
         [Authorize]
         public IActionResult ReadById(int id)
@@ -75,39 +101,38 @@ namespace ProjetoFechadura.Controllers
             return NoContent();
         }
 
-        [HttpPost("confirmacaoFuncionario")]
-[Authorize]
+[HttpPost("confirmacaoFuncionario")]
 public IActionResult ConfirmacaoFuncionario(
     [FromQuery] int idFuncionario,
     [FromQuery] int novoCargoId,
-    [FromQuery] int novoPerfilId)
+    [FromQuery] int novoPerfilId,
+    [FromQuery] int idValidador)
 {
+    // Verificar se o ID do funcionário é válido
     if (idFuncionario <= 1)
     {
         return BadRequest(new { Message = "ID do Funcionário inválido" });
     }
 
+    // Verificar se o ID do validador é válido
+    if (idValidador <= 1)
+    {
+        return BadRequest(new { Message = "ID do Validador inválido" });
+    }
+
     try
     {
-        // Recuperar o id do validador do token JWT
-        var validadorIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
-        if (validadorIdClaim == null)
-        {
-            return Unauthorized(new { Message = "Token inválido ou não autorizado" });
-        }
+        // Recuperar os dados do validador a partir do banco de dados
+        var validador = _funcionarioDao.ReadById(idValidador);
 
-        int validadorId = int.Parse(validadorIdClaim.Value);
-
-        // Recuperar os dados do validador pelo ID
-        var validador = _funcionarioDao.ReadById(validadorId);
-
+        // Verificar se o validador existe no banco de dados
         if (validador == null)
         {
             return NotFound(new { Message = "Validador não encontrado" });
         }
 
-        // Garantir que o validador tem o perfil adm (perfilId = 3)
-        if (validador.Perfil_IdPerfil != 3)
+        // Garantir que o validador está ativo e tem permissão para promover (perfil adm = 3)
+        if (validador.IsAtivo != 1 || validador.Perfil_IdPerfil != 3)
         {
             return BadRequest(new { Message = "Usuário não autorizado para promover funcionários" });
         }
@@ -115,12 +140,13 @@ public IActionResult ConfirmacaoFuncionario(
         // Recuperar os dados atuais do funcionário pelo ID
         var funcionarioAtual = _funcionarioDao.ReadById(idFuncionario);
 
+        // Verificar se o funcionário foi encontrado
         if (funcionarioAtual == null)
         {
             return NotFound(new { Message = "Funcionário não encontrado" });
         }
 
-        // Garantir que o funcionário não está atualmente ativo
+        // Garantir que o funcionário não está ativo
         if (funcionarioAtual.IsAtivo == 1)
         {
             return BadRequest(new { Message = "Funcionário já está ativo" });
@@ -132,10 +158,10 @@ public IActionResult ConfirmacaoFuncionario(
         // Gerar uma senha de teclado única
         int credencialTeclado = int.Parse(_funcionarioDao.GenerateUniqueRandomPassword());
 
-        // Atualizar os campos para ativar o funcionário
+        // Atualizar os campos do funcionário para ativação
         funcionarioAtual.IsAtivo = 1;  // Ativar o funcionário
-        funcionarioAtual.CredencialCartao = credencialCartao;  // Definir nova credencial de cartão
-        funcionarioAtual.CredencialTeclado = credencialTeclado;  // Definir nova senha de teclado
+        funcionarioAtual.CredencialCartao = credencialCartao;  // Nova credencial de cartão
+        funcionarioAtual.CredencialTeclado = credencialTeclado;  // Nova senha de teclado
         funcionarioAtual.Cargo_IdCargo = novoCargoId;  // Atualizar o cargo
         funcionarioAtual.Perfil_IdPerfil = novoPerfilId;  // Atualizar o perfil
 
@@ -146,55 +172,71 @@ public IActionResult ConfirmacaoFuncionario(
     }
     catch (Exception ex)
     {
+        // Tratar erros inesperados
         return StatusCode(500, new { Message = "Erro ao promover o funcionário", Error = ex.Message });
     }
 }
 
 
+
+
         // Endpoint de login que gera um token JWT
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.NomeUsuario) || string.IsNullOrWhiteSpace(request.Senha))
-            {
-                return BadRequest(new { Message = "Nome de usuário e senha são obrigatórios" });
-            }
+public IActionResult Login([FromBody] LoginRequest request)
+{
+    // Validação dos parâmetros de entrada
+    if (request == null || string.IsNullOrWhiteSpace(request.NomeUsuario) || string.IsNullOrWhiteSpace(request.Senha))
+    {
+        return BadRequest(new { Message = "Nome de usuário e senha são obrigatórios" });
+    }
 
-            int idFuncionario = _funcionarioDao.AuthenticateUser(request.NomeUsuario, request.Senha);
-            if (idFuncionario == 1)
-            {
-                return Unauthorized(new { Message = "Nome de usuário ou senha inválidos" });
-            }
+    // Autenticação do usuário
+    int idFuncionario = _funcionarioDao.AuthenticateUser(request.NomeUsuario, request.Senha);
 
-            var funcionario = _funcionarioDao.ReadById(idFuncionario);
-            if (funcionario == null || funcionario.IsAtivo != 1)
-            {
-                return Unauthorized(new { Message = "Usuário não está ativo no sistema" });
-            }
+    // Verificação do resultado da autenticação
+    if (idFuncionario == 0) // Assumindo que 0 significa falha na autenticação
+    {
+        return Unauthorized(new { Message = "Nome de usuário ou senha inválidos" });
+    }
 
-            var token = GenerateJwtToken(idFuncionario);
-            return Ok(new { Token = token });
-        }
+    // Recuperação do funcionário após a autenticação bem-sucedida
+    var funcionario = _funcionarioDao.ReadById(idFuncionario);
+    if (funcionario == null || funcionario.IsAtivo != 1)
+    {
+        return Unauthorized(new { Message = "Usuário não está ativo no sistema" });
+    }
 
-        // Função para gerar o token JWT
-        private string GenerateJwtToken(int idFuncionario)
-        {
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, idFuncionario.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+    // Geração do token JWT
+    var token = GenerateJwtToken(idFuncionario);
 
-            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSecret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+    // Retorna o token gerado
+    return Ok(new { Token = token });
+}
 
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: creds);
+// Função para gerar o token JWT
+private string GenerateJwtToken(int idFuncionario)
+{
+    var claims = new[]
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, idFuncionario.ToString()),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+    // Cria a chave de segurança usando o segredo configurado
+    var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSecret));
+    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+    // Geração do token JWT
+    var token = new JwtSecurityToken(
+        issuer: _jwtIssuer, // Opcional: adicione se precisar de emissor
+        audience: _jwtAudience, // Opcional: adicione se precisar de audiência
+        claims: claims,
+        expires: DateTime.UtcNow.AddHours(1), // Tempo de expiração do token
+        signingCredentials: creds);
+
+    // Retorna o token em formato string
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
     }
 
     // Classe de request para o login

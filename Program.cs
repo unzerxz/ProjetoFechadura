@@ -10,13 +10,20 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configuração de logs
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-// Adicione serviços ao contêiner.
+// Carregar configurações JWT do appsettings.json
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings.GetValue<string>("SecretKey");
+var issuer = jwtSettings.GetValue<string>("Issuer");
+var audience = jwtSettings.GetValue<string>("Audience");
+
+// Adicionar serviços ao contêiner
 builder.Services.AddControllers();
 
-// Configuração do JWT
+// Configuração da autenticação JWT
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -26,20 +33,21 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = false,  // Ajuste se você usar Issuer
-        ValidateAudience = false, // Ajuste se você usar Audience
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("vX0/Yt+K2@J3dN5r4K8kzG$9XbFs5Wq3p!zC&6L7L8O2H9I0J0")),
-        ClockSkew = TimeSpan.Zero // Elimina a diferença de tempo entre servidores
+        ValidateIssuer = true,  // Valida o Issuer
+        ValidateAudience = true, // Valida o Audience
+        ValidateLifetime = true, // Valida o tempo de vida do token
+        ValidateIssuerSigningKey = true, // Valida a chave de assinatura
+        ValidIssuer = issuer,
+        ValidAudience = audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero // Elimina diferença de tempo entre servidores
     };
 
-    // Adicione eventos para lidar com desafios de autenticação
+    // Eventos para lidar com desafios de autenticação
     options.Events = new JwtBearerEvents
     {
         OnChallenge = context =>
         {
-            // Personalize a resposta de erro para tokens inválidos ou ausentes
             context.HandleResponse(); // Impede a resposta padrão do desafio
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/json";
@@ -80,7 +88,7 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}  // Especifica que nenhuma permissão adicional é necessária
+            new string[] {}  // Nenhuma permissão adicional é necessária
         }
     });
 });
@@ -94,13 +102,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProjetoFechadura v1");
-        c.RoutePrefix = string.Empty; // Carregar a UI do Swagger na raiz
+        c.RoutePrefix = string.Empty; // Carregar UI do Swagger na raiz
     });
 }
 
 app.UseHttpsRedirection(); // Se o projeto usa HTTPS
 
-app.UseAuthentication(); // Habilitar a autenticação JWT
+// Habilitar autenticação e autorização JWT
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
