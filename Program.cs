@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +40,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true, // Valida a chave de assinatura
         ValidIssuer = issuer,
         ValidAudience = audience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey ?? throw new InvalidOperationException("Secret key is null"))),
         ClockSkew = TimeSpan.Zero // Elimina diferença de tempo entre servidores
     };
 
@@ -115,3 +116,22 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+app.Use(async (context, next) =>
+{
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+    if (token != null)
+    {
+        Console.WriteLine($"Token recebido: {token}");
+        var handler = new JwtSecurityTokenHandler();
+        var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+        if (jsonToken != null)
+        {
+            foreach (var claim in jsonToken.Claims)
+            {
+                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+            }
+        }
+    }
+    await next();
+});

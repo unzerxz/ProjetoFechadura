@@ -404,39 +404,66 @@ public static string GenerateCredencialCartao(Funcionario funcionario)
 }
 
 public int AuthenticateUser(string nomeUsuario, string senha)
-    {
-        int idFuncionario = 0;
+{
+    int idFuncionario = 0;
 
-        try
+    try
+    {
+        _connection.Open();
+        const string query = "SELECT idFuncionario FROM funcionario WHERE nomeUsuario = @NomeUsuario AND senha = @Senha AND isAtivo = 1";
+
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@NomeUsuario", nomeUsuario);
+        command.Parameters.AddWithValue("@Senha", senha);
+
+        var result = command.ExecuteScalar();
+        if (result != null)
+        {
+            idFuncionario = Convert.ToInt32(result);
+            Console.WriteLine($"ID do funcionário autenticado no DAO: {idFuncionario}");
+        }
+        else
+        {
+            Console.WriteLine("Nenhum funcionário encontrado com as credenciais fornecidas");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro na autenticação: {ex.Message}");
+    }
+    finally
+    {
+        _connection.Close();
+    }
+
+    return idFuncionario;
+}
+
+public bool IsFuncionarioAdmin(int idFuncionario)
+{
+    try
+    {
+        using (_connection)
         {
             _connection.Open();
-            const string query = "SELECT idFuncionario FROM funcionario WHERE nomeUsuario = @NomeUsuario AND senha = @Senha AND isAtivo = 1";
+            const string query = "SELECT COUNT(*) > 0 FROM funcionario WHERE idFuncionario = @IdFuncionario AND perfil_idPerfil = 3 AND isAtivo = 1";
 
             using var command = new MySqlCommand(query, _connection);
-            command.Parameters.AddWithValue("@NomeUsuario", nomeUsuario);
-            command.Parameters.AddWithValue("@Senha", senha);
+            command.Parameters.AddWithValue("@IdFuncionario", idFuncionario);
 
-            var result = command.ExecuteScalar();
-            if (result != null)
-            {
-                idFuncionario = Convert.ToInt32(result);
-            }
+            var result = Convert.ToBoolean(command.ExecuteScalar());
+            Console.WriteLine($"IsFuncionarioAdmin para ID {idFuncionario}: {result}");
+            return result;
         }
-        catch (MySqlException ex)
-        {
-            Console.WriteLine($"Erro do Banco: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro desconhecido: {ex.Message}");
-        }
-        finally
-        {
-            _connection.Close();
-        }
-
-        return idFuncionario;
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro ao verificar se funcionário é admin: {ex.Message}");
+        return false;
+    }
+}
+
+
 
 
 

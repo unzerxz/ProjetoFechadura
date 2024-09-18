@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoFechadura.Models;
 
@@ -19,6 +20,7 @@ public class RegistroController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult Read()
     {
         var registros = _registroDao.Read();
@@ -41,6 +43,7 @@ public class RegistroController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize]
     public IActionResult Put(int id, [FromBody] Registro registro)
     {
         if (id != registro.IdRegistro) return BadRequest();
@@ -50,6 +53,7 @@ public class RegistroController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize]
     public IActionResult Delete(int id)
     {
         if (_registroDao.ReadById(id) == null) return NotFound();
