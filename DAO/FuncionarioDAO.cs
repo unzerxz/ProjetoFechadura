@@ -73,9 +73,8 @@ public class FuncionarioDAO
             _connection.Close();
         }
 
-#pragma warning disable CS8603 // Possible null reference return.
         return funcionarios;
-#pragma warning restore CS8603 // Possible null reference return.
+
     }
 
     public Funcionario? ReadById(int id)
@@ -410,7 +409,7 @@ public int AuthenticateUser(string nomeUsuario, string senha)
     try
     {
         _connection.Open();
-        const string query = "SELECT idFuncionario FROM funcionario WHERE nomeUsuario = @NomeUsuario AND senha = @Senha AND isAtivo = 1";
+        const string query = "SELECT idFuncionario FROM funcionario WHERE nomeUsuario = @NomeUsuario AND senha = @Senha";
 
         using var command = new MySqlCommand(query, _connection);
         command.Parameters.AddWithValue("@NomeUsuario", nomeUsuario);
@@ -462,10 +461,4 @@ public bool IsFuncionarioAdmin(int idFuncionario)
         return false;
     }
 }
-
-
-
-
-
-
 }

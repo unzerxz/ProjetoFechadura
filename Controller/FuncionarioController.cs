@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoFechadura.Models;
 
@@ -27,7 +28,7 @@ namespace ProjetoFechadura.Controllers
             _jwtAudience = configuration.GetValue<string>("JwtSettings:Audience");
         }
 
-        // Método para obter todos os funcionários
+        // Método para obter todos os funcionários (somente Admin)
         [HttpGet]
         [Authorize]
         public IActionResult Read()
@@ -41,7 +42,6 @@ namespace ProjetoFechadura.Controllers
                 return Forbid();
             }
 
-            Console.WriteLine("Usuário é admin");
             var funcionarios = _funcionarioDao.Read();
             return Ok(funcionarios);
         }
@@ -52,20 +52,28 @@ namespace ProjetoFechadura.Controllers
         public IActionResult ReadById(int id)
         {
             var idFuncionario = GetValidadorIdFromToken();
-            if (!IsUserAdmin(idFuncionario)) return Forbid(); // Verifica se o usuário é admin
+            if (!IsUserAdmin(idFuncionario)) return Forbid();
 
             var funcionario = _funcionarioDao.ReadById(id);
             if (funcionario == null) return NotFound();
             return Ok(funcionario);
         }
 
-        // Método para atualizar um funcionário existente
+        // Método para criar novo funcionário
+        [HttpPost]
+        public IActionResult Post(Funcionario funcionario)
+        {
+            _funcionarioDao.Create(funcionario);
+            return CreatedAtAction(nameof(ReadById), new { id = funcionario.IdFuncionario }, funcionario);
+        }
+
+        // Método para atualizar um funcionário
         [HttpPut("{id:int}")]
         [Authorize]
         public IActionResult Put(int id, [FromBody] Funcionario funcionario)
         {
             var idFuncionario = GetValidadorIdFromToken();
-            if (!IsUserAdmin(idFuncionario)) return Forbid(); // Verifica se o usuário é admin
+            if (!IsUserAdmin(idFuncionario)) return Forbid();
 
             if (id != funcionario.IdFuncionario || id == 1) return BadRequest();
             if (_funcionarioDao.ReadById(id) == null) return NotFound();
@@ -79,165 +87,181 @@ namespace ProjetoFechadura.Controllers
         public IActionResult Delete(int id)
         {
             var idFuncionario = GetValidadorIdFromToken();
-            if (!IsUserAdmin(idFuncionario)) return Forbid(); // Verifica se o usuário é admin
+            if (!IsUserAdmin(idFuncionario)) return Forbid();
 
             if (_funcionarioDao.ReadById(id) == null || id == 1) return NotFound();
             _funcionarioDao.Delete(id);
             return NoContent();
         }
 
-        [HttpPost("confirmacaoFuncionario")] // Admin
-[Authorize] // Garante que apenas usuários autenticados podem acessar este endpoint
-public IActionResult ConfirmacaoFuncionario(
-    [FromQuery] int idFuncionario,
-    [FromQuery] int novoCargoId,
-    [FromQuery] int novoPerfilId)
+        // Método para promoção de funcionário (somente Admin)
+        [HttpPost("confirmacaoFuncionario")]
+        [Authorize]
+        public IActionResult ConfirmacaoFuncionario([FromQuery] int idFuncionario, [FromQuery] int novoCargoId, [FromQuery] int novoPerfilId)
+        {
+            if (idFuncionario <= 1) return BadRequest(new { Message = "ID do Funcionário inválido" });
+
+            try
+            {
+                var idValidador = GetValidadorIdFromToken();
+                if (!IsUserAdmin(idValidador)) return BadRequest(new { Message = "Usuário não autorizado" });
+
+                var funcionarioAtual = _funcionarioDao.ReadById(idFuncionario);
+                if (funcionarioAtual == null) return NotFound(new { Message = "Funcionário não encontrado" });
+
+                if (funcionarioAtual.IsAtivo == 1) return BadRequest(new { Message = "Funcionário já está ativo" });
+
+                string credencialCartao = _funcionarioDao.GenerateUniqueCredencialCartao(funcionarioAtual);
+                int credencialTeclado = int.Parse(_funcionarioDao.GenerateUniqueRandomPassword());
+
+                funcionarioAtual.IsAtivo = 1;
+                funcionarioAtual.CredencialCartao = credencialCartao;
+                funcionarioAtual.CredencialTeclado = credencialTeclado;
+                funcionarioAtual.Cargo_IdCargo = novoCargoId;
+                funcionarioAtual.Perfil_IdPerfil = novoPerfilId;
+
+                _funcionarioDao.Update(idFuncionario, funcionarioAtual);
+                return Ok(new { Message = "Funcionário promovido e ativado com sucesso", Funcionario = funcionarioAtual });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Erro ao promover o funcionário", Error = ex.Message });
+            }
+        }
+
+private int GetValidadorIdFromToken()
 {
-    // Verificar se o ID do funcionário é válido
-    if (idFuncionario <= 1)
+    // Obter o token JWT do cabeçalho Authorization
+    var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+    Console.WriteLine("Token: " + authHeader);
+
+    if (authHeader == null || !authHeader.StartsWith("Bearer "))
     {
-        return BadRequest(new { Message = "ID do Funcionário inválido" });
+        Console.WriteLine("Token não fornecido ou inválido no cabeçalho");
+        return 0; // Retorna 0 se o token não estiver presente ou for inválido
     }
+
+    var token = authHeader.Substring("Bearer ".Length).Trim();
+    Console.WriteLine("Token extraído: " + token);
 
     try
     {
-        // Obter o ID do validador a partir do token
-        var idValidador = GetValidadorIdFromToken();
-
-        // Validar se o validador é um administrador
-        if (!IsUserAdmin(idValidador))
+        // Parâmetros de validação do token
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_jwtSecret);
+        var validationParameters = new TokenValidationParameters
         {
-            return BadRequest(new { Message = "Usuário não autorizado para promover funcionários" });
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = _jwtIssuer,
+            ValidAudience = _jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateLifetime = true // Verifica se o token não expirou
+        };
+
+        // Valida o token e obtém as claims
+        SecurityToken validatedToken;
+        var claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+
+        Console.WriteLine("Token validado com sucesso.");
+
+        // Log de todas as claims
+        foreach (var claim in claimsPrincipal.Claims)
+        {
+            Console.WriteLine($"Claim Type: {claim.Type}, Claim Value: {claim.Value}");
         }
 
-        // Recuperar os dados atuais do funcionário pelo ID
-        var funcionarioAtual = _funcionarioDao.ReadById(idFuncionario);
+        var idClaim = claimsPrincipal.Claims.FirstOrDefault(claim => claim.Type == "idFuncionario");
 
-        // Verificar se o funcionário foi encontrado
-        if (funcionarioAtual == null)
+        if (idClaim != null)
         {
-            return NotFound(new { Message = "Funcionário não encontrado" });
-        }
-
-        // Garantir que o funcionário não está ativo
-        if (funcionarioAtual.IsAtivo == 1)
-        {
-            return BadRequest(new { Message = "Funcionário já está ativo" });
-        }
-
-        // Gerar uma credencial de cartão única
-        string credencialCartao = _funcionarioDao.GenerateUniqueCredencialCartao(funcionarioAtual);
-
-        // Gerar uma senha de teclado única
-        int credencialTeclado = int.Parse(_funcionarioDao.GenerateUniqueRandomPassword());
-
-        // Atualizar os campos do funcionário para ativação
-        funcionarioAtual.IsAtivo = 1;  // Ativar o funcionário
-        funcionarioAtual.CredencialCartao = credencialCartao;  // Nova credencial de cartão
-        funcionarioAtual.CredencialTeclado = credencialTeclado;  // Nova senha de teclado
-        funcionarioAtual.Cargo_IdCargo = novoCargoId;  // Atualizar o cargo
-        funcionarioAtual.Perfil_IdPerfil = novoPerfilId;  // Atualizar o perfil
-
-        // Atualizar o funcionário no banco de dados
-        _funcionarioDao.Update(idFuncionario, funcionarioAtual);
-
-        return Ok(new { Message = "Funcionário promovido e ativado com sucesso", Funcionario = funcionarioAtual });
-    }
-    catch (Exception ex)
-    {
-        // Tratar erros inesperados
-        return StatusCode(500, new { Message = "Erro ao promover o funcionário", Error = ex.Message });
-    }
-}
-
-        // Método para obter o ID do validador a partir do token
-        private int GetValidadorIdFromToken()
-        {
-            var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub);
-            if (idClaim != null)
+            Console.WriteLine($"ID do funcionário (claim): {idClaim.Value}");
+            
+            if (int.TryParse(idClaim.Value, out int idFuncionario))
             {
-                Console.WriteLine($"Claim encontrada: {idClaim.Type} = {idClaim.Value}");
-                if (int.TryParse(idClaim.Value, out int idFuncionario))
-                {
-                    Console.WriteLine($"ID do funcionário extraído: {idFuncionario}");
-                    return idFuncionario;
-                }
-                else
-                {
-                    Console.WriteLine("Falha ao converter o valor da claim para int");
-                }
+                Console.WriteLine($"ID do funcionário extraído do token: {idFuncionario}");
+                return idFuncionario;
             }
             else
             {
-                Console.WriteLine("Claim 'sub' não encontrada no token");
+                Console.WriteLine("Não foi possível converter o valor da claim para um inteiro.");
             }
-            return 0;
         }
+        else
+        {
+            Console.WriteLine("Claim 'idFuncionario' não encontrada.");
+        }
+    }
+    catch (SecurityTokenExpiredException ex)
+    {
+        Console.WriteLine("Token expirado: " + ex.Message);
+    }
+    catch (SecurityTokenInvalidSignatureException ex)
+    {
+        Console.WriteLine("Assinatura do token inválida: " + ex.Message);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro ao validar o token: {ex.Message}");
+    }
 
+    Console.WriteLine("Falha ao obter ID do validador a partir do token.");
+    return 0; // Retorna 0 caso a validação falhe
+}
+
+
+
+
+
+        // Método para verificar se o usuário é admin
         private bool IsUserAdmin(int idFuncionario)
         {
-            return _funcionarioDao.IsFuncionarioAdmin(idFuncionario); // Verifica se é admin
+            return _funcionarioDao.IsFuncionarioAdmin(idFuncionario);
         }
 
         // Endpoint de login que gera um token JWT
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
-            // Validação dos parâmetros de entrada
-            if (request == null || string.IsNullOrWhiteSpace(request.NomeUsuario) || string.IsNullOrWhiteSpace(request.Senha))
+            if (string.IsNullOrWhiteSpace(request.NomeUsuario) || string.IsNullOrWhiteSpace(request.Senha))
             {
                 return BadRequest(new { Message = "Nome de usuário e senha são obrigatórios" });
             }
 
-            // Autenticação do usuário
             int idFuncionario = _funcionarioDao.AuthenticateUser(request.NomeUsuario, request.Senha);
-            Console.WriteLine($"ID do funcionário autenticado: {idFuncionario}");
+            if (idFuncionario == 0) return Unauthorized(new { Message = "Nome de usuário ou senha inválidos" });
 
-            // Verificação do resultado da autenticação
-            if (idFuncionario == 0) // Assumindo que 0 significa falha na autenticação
-            {
-                return Unauthorized(new { Message = "Nome de usuário ou senha inválidos" });
-            }
-
-            // Recuperação do funcionário após a autenticação bem-sucedida
             var funcionario = _funcionarioDao.ReadById(idFuncionario);
-            if (funcionario == null || funcionario.IsAtivo != 1)
-            {
-                return Unauthorized(new { Message = "Usuário não está ativo no sistema" });
-            }
+            if (funcionario == null || funcionario.IsAtivo != 1) return Unauthorized(new { Message = "Usuário não está ativo" });
 
-            // Geração do token JWT
             var token = GenerateJwtToken(idFuncionario);
-
-            // Retorna o token gerado
             return Ok(new { Token = token });
         }
 
         // Função para gerar o token JWT
-        private string GenerateJwtToken(int idFuncionario)
-        {
-            Console.WriteLine($"Gerando token para o funcionário ID: {idFuncionario}");
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, idFuncionario.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+private string GenerateJwtToken(int idFuncionario)
+{
+    var claims = new[]
+    {
+        new Claim("idFuncionario", idFuncionario.ToString())
+    };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
+    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken(
-                issuer: _jwtIssuer,
-                audience: _jwtAudience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: creds
-            );
+    var token = new JwtSecurityToken(
+        issuer: _jwtIssuer,
+        audience: _jwtAudience,
+        claims: claims,
+        expires: DateTime.UtcNow.AddHours(1),
+        signingCredentials: creds
+    );
 
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-            Console.WriteLine($"Token gerado: {tokenString}");
-            return tokenString;
-        }
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+
     }
 
     // Classe de request para o login
