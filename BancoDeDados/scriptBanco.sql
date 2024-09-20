@@ -84,7 +84,6 @@ CREATE TABLE IF NOT EXISTS `bdFechadura`.`sala` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
-
 -- -----------------------------------------------------
 -- Table `bdFechadura`.`registro`
 -- -----------------------------------------------------
@@ -109,6 +108,22 @@ CREATE TABLE IF NOT EXISTS `bdFechadura`.`registro` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+-- -----------------------------------------------------
+-- Table `bdFechadura`.`tokenFuncionario`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `bdFechadura`.`tokenFuncionario` (
+  `idToken` INT NOT NULL AUTO_INCREMENT,
+  `token` VARCHAR(500) NOT NULL,
+  `timeExpiracao` DATETIME NOT NULL,
+  `funcionario_idFuncionario` INT NOT NULL,
+  PRIMARY KEY (`idToken`, `funcionario_idFuncionario`),
+  INDEX `fk_tokenFuncionario_funcionario1_idx` (`funcionario_idFuncionario` ASC) VISIBLE,
+  CONSTRAINT `fk_tokenFuncionario_funcionario1`
+    FOREIGN KEY (`funcionario_idFuncionario`)
+    REFERENCES `bdFechadura`.`funcionario` (`idFuncionario`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
