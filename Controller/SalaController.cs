@@ -161,14 +161,6 @@ public IActionResult CriarSala([FromBody] string identificacaoSala)
     }
 }
 
-    [HttpPost]
-    [Authorize]
-    public IActionResult Post(Sala sala)
-    {
-        _salaDao.Create(sala);
-        return CreatedAtAction(nameof(ReadById), new { id = sala.IdSala }, sala);
-    }
-
     [HttpPut("{id:int}")]
     public IActionResult AtualizaUsuarioSala(int id, [FromBody] Sala sala)
     {

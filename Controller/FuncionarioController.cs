@@ -233,11 +233,14 @@ namespace ProjetoFechadura.Controllers
             var funcionario = _funcionarioDao.ReadById(idFuncionario);
             if (funcionario == null || funcionario.IsAtivo != 1) return Unauthorized(new { Message = "Usuário não está ativo" });
 
-            if (_tokenDao.IsValidTokenExists(idFuncionario))
+            // Verifica se já existe um token válido para este funcionário
+            var existingToken = _tokenDao.GetValidTokenForFuncionario(idFuncionario);
+            if (existingToken != null)
             {
-                return BadRequest(new { Message = "Usuário já está logado" });
+                return Ok(new { Token = existingToken.Token, ExpirationTime = existingToken.TimeExpiracao });
             }
 
+            // Se não existe um token válido, cria um novo
             var token = GenerateJwtToken(idFuncionario);
             var expirationTime = DateTime.UtcNow.AddHours(1);
             _tokenDao.SaveToken(token, expirationTime, idFuncionario);
@@ -274,7 +277,7 @@ namespace ProjetoFechadura.Controllers
                 issuer: _jwtIssuer,
                 audience: _jwtAudience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
+                expires: DateTime.UtcNow.AddHours(24),
                 signingCredentials: creds
             );
 

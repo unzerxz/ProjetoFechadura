@@ -8,6 +8,7 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
+using ProjetoFechadura.DAO; // Assuming TokenDAO is in a separate file
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,38 +26,44 @@ var audience = jwtSettings.GetValue<string>("Audience");
 builder.Services.AddControllers();
 
 // Configuração da autenticação JWT
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,  // Valida o Issuer
-        ValidateAudience = true, // Valida o Audience
-        ValidateLifetime = true, // Valida o tempo de vida do token
-        ValidateIssuerSigningKey = true, // Valida a chave de assinatura
-        ValidIssuer = issuer,
-        ValidAudience = audience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey ?? throw new InvalidOperationException("Secret key is null"))),
-        ClockSkew = TimeSpan.Zero // Elimina diferença de tempo entre servidores
-    };
-
-    // Eventos para lidar com desafios de autenticação
-    options.Events = new JwtBearerEvents
-    {
-        OnChallenge = context =>
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            context.HandleResponse(); // Impede a resposta padrão do desafio
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/json";
-            var result = new { message = "Token inválido ou não fornecido." };
-            return context.Response.WriteAsJsonAsync(result);
-        }
-    };
-});
+            ValidateIssuer = true,  // Valida o Issuer
+            ValidateAudience = true, // Valida o Audience
+            ValidateLifetime = true, // Valida o tempo de vida do token
+            ValidateIssuerSigningKey = true, // Valida a chave de assinatura
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey ?? throw new InvalidOperationException("Secret key is null"))),
+            ClockSkew = TimeSpan.Zero // Elimina diferença de tempo entre servidores
+        };
+
+        // Eventos para lidar com desafios de autenticação
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse(); // Impede a resposta padrão do desafio
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                var result = new { message = "Token inválido ou não fornecido." };
+                return context.Response.WriteAsJsonAsync(result);
+            },
+            OnTokenValidated = async context =>
+            {
+                var tokenDao = context.HttpContext.RequestServices.GetRequiredService<TokenDAO>();
+                var tokenString = context.HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                
+                if (!tokenDao.IsTokenValidAndActive(tokenString))
+                {
+                    context.Fail("Token inválido, expirado ou não encontrado no banco de dados.");
+                }
+            }
+        };
+    });
 
 builder.Services.AddAuthorization();
 
@@ -93,6 +100,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+builder.Services.AddScoped<TokenDAO>(); // Register TokenDAO as a service
 
 var app = builder.Build();
 

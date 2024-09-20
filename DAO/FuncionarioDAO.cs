@@ -442,23 +442,27 @@ public bool IsFuncionarioAdmin(int idFuncionario)
 {
     try
     {
-        using (_connection)
-        {
-            _connection.Open();
-            const string query = "SELECT COUNT(*) > 0 FROM funcionario WHERE idFuncionario = @IdFuncionario AND perfil_idPerfil = 3 AND isAtivo = 1";
+        _connection.Open();
+        const string query = "SELECT COUNT(*) > 0 FROM funcionario WHERE idFuncionario = @IdFuncionario AND perfil_idPerfil = 3 AND isAtivo = 1";
 
-            using var command = new MySqlCommand(query, _connection);
-            command.Parameters.AddWithValue("@IdFuncionario", idFuncionario);
+        using var command = new MySqlCommand(query, _connection);
+        command.Parameters.AddWithValue("@IdFuncionario", idFuncionario);
 
-            var result = Convert.ToBoolean(command.ExecuteScalar());
-            Console.WriteLine($"IsFuncionarioAdmin para ID {idFuncionario}: {result}");
-            return result;
-        }
+        var result = Convert.ToBoolean(command.ExecuteScalar());
+        Console.WriteLine($"IsFuncionarioAdmin para ID {idFuncionario}: {result}");
+        return result;
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Erro ao verificar se funcionário é admin: {ex.Message}");
         return false;
+    }
+    finally
+    {
+        if (_connection.State == System.Data.ConnectionState.Open)
+        {
+            _connection.Close();
+        }
     }
 }
 }
