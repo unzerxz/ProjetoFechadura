@@ -465,4 +465,9 @@ public bool IsFuncionarioAdmin(int idFuncionario)
         }
     }
 }
+
+    internal object GetJwtSecret()
+    {
+        throw new NotImplementedException();
+    }
 }

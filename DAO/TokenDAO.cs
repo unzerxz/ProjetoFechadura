@@ -202,5 +202,92 @@ namespace ProjetoFechadura.DAO
                 _connection.Close();
             }
         }
+
+        public List<TokenFuncionario> ObterTokensExpirados()
+        {
+            try
+            {
+                _connection.Open();
+                const string query = @"SELECT idToken, token FROM tokenFuncionario 
+                                       WHERE timeExpiracao <= @CurrentTime";
+
+                using var command = new MySqlCommand(query, _connection);
+                command.Parameters.AddWithValue("@CurrentTime", DateTime.UtcNow);
+
+                using var reader = command.ExecuteReader();
+                var tokensExpirados = new List<TokenFuncionario>();
+
+                while (reader.Read())
+                {
+                    tokensExpirados.Add(new TokenFuncionario
+                    {
+                        IdToken = reader.GetInt32("idToken"),
+                        Token = reader.GetString("token")
+                    });
+                }
+
+                return tokensExpirados;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao buscar tokens expirados: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                _connection.Close();
+            }
+        }
+
+        public void RemoverToken(int idToken)
+        {
+            try
+            {
+                _connection.Open();
+                const string query = "DELETE FROM tokenFuncionario WHERE idToken = @IdToken";
+
+                using var command = new MySqlCommand(query, _connection);
+                command.Parameters.AddWithValue("@IdToken", idToken);
+
+                command.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao remover token: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                _connection.Close();
+            }
+        }
+
+        public void LogAllTokens()
+        {
+            try
+            {
+                _connection.Open();
+                const string query = @"SELECT idToken, token, timeExpiracao FROM tokenFuncionario";
+
+                using var command = new MySqlCommand(query, _connection);
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    int idToken = reader.GetInt32("idToken");
+                    string token = reader.GetString("token");
+                    DateTime expiracao = reader.GetDateTime("timeExpiracao");
+                    Console.WriteLine($"Token ID: {idToken}, Token: {token}, Expira em: {expiracao}, Expirado: {expiracao <= DateTime.UtcNow}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao logar tokens: {ex.Message}");
+            }
+            finally
+            {
+                _connection.Close();
+            }
+        }
     }
 }

@@ -242,7 +242,7 @@ namespace ProjetoFechadura.Controllers
 
             // Se não existe um token válido, cria um novo
             var token = GenerateJwtToken(idFuncionario);
-            var expirationTime = DateTime.UtcNow.AddHours(1);
+            var expirationTime = DateTime.UtcNow.AddHours(24); // Alterado para 24 horas
             _tokenDao.SaveToken(token, expirationTime, idFuncionario);
 
             return Ok(new { Token = token, ExpirationTime = expirationTime });
@@ -277,7 +277,7 @@ namespace ProjetoFechadura.Controllers
                 issuer: _jwtIssuer,
                 audience: _jwtAudience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(24),
+                expires: DateTime.UtcNow.AddHours(24), // Alterado para 24 horas
                 signingCredentials: creds
             );
 

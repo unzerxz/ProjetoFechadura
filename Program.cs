@@ -8,7 +8,7 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
-using ProjetoFechadura.DAO; // Assuming TokenDAO is in a separate file
+using ProjetoFechadura.DAO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,6 +103,9 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddScoped<TokenDAO>(); // Register TokenDAO as a service
 
+// Adicionar serviço de limpeza de tokens expirados (a cada 1 hora)
+builder.Services.AddHostedService(provider => new TokenCleanupService(provider, TimeSpan.FromHours(1)));
+
 var app = builder.Build();
 
 // Configuração do pipeline HTTP
@@ -125,22 +128,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-app.Use(async (context, next) =>
-{
-    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-    if (token != null)
-    {
-        Console.WriteLine($"Token recebido: {token}");
-        var handler = new JwtSecurityTokenHandler();
-        var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
-        if (jsonToken != null)
-        {
-            foreach (var claim in jsonToken.Claims)
-            {
-                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
-            }
-        }
-    }
-    await next();
-});

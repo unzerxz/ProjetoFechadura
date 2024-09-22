@@ -2361,19 +2361,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Roger.Diegoli\\.nuget\\packages\\": {}
+    "C:\\Users\\Roger_Diegoli\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\ProjetoFechadura.csproj",
+      "projectUniqueName": "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\ProjetoFechadura.csproj",
       "projectName": "ProjetoFechadura",
-      "projectPath": "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\ProjetoFechadura.csproj",
-      "packagesPath": "C:\\Users\\Roger.Diegoli\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Roger.Diegoli\\Desktop\\Roger\\CloneRepository\\ProjetoFechadura\\obj\\",
+      "projectPath": "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\ProjetoFechadura.csproj",
+      "packagesPath": "C:\\Users\\Roger_Diegoli\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Roger_Diegoli\\Desktop\\Repositórios\\ProjetoFechadura\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Roger.Diegoli\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Roger_Diegoli\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -2446,7 +2446,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.201/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
