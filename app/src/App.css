@@ -1,0 +1,168 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+header {
+  background-color: #333;
+  color: white;
+  padding: 10px 0;
+}
+
+header nav ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+}
+
+header nav ul li {
+  margin: 0 15px;
+}
+
+header nav ul li a,
+header nav ul li button {
+  color: white;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+header nav ul li button {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+header nav ul li button:hover {
+  background-color: #555;
+}
+
+.auth-container,
+.admin-container,
+.user-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form,
+.admin-form,
+.user-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.auth-button,
+.admin-button,
+.user-button {
+  padding: 10px;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.auth-button:hover,
+.admin-button:hover,
+.user-button:hover {
+  background-color: #555;
+}
+
+.error-message,
+.message {
+  color: red;
+  margin-bottom: 15px;
+}
+
+.admin-dashboard,
+.user-dashboard {
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-menu,
+.user-menu {
+  list-style: none;
+  padding: 0;
+}
+
+.admin-menu li,
+.user-menu li {
+  margin-bottom: 10px;
+}
+
+.admin-menu li a,
+.user-menu li a {
+  text-decoration: none;
+  color: #333;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: block;
+  text-align: center;
+}
+
+.admin-menu li a:hover,
+.user-menu li a:hover {
+  background-color: #f0f0f0;
+}
+
+.cargo-list,
+.employee-list,
+.history-list,
+.sala-list {
+  list-style: none;
+  padding: 0;
+}
+
+.cargo-item,
+.employee-item,
+.history-item,
+.sala-item {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-button {
+  padding: 5px 10px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: darkred;
+}
