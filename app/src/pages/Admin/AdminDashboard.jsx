@@ -10,6 +10,7 @@ function AdminDashboard() {
                 <li><Link to="/admin/salas">Criar Sala</Link></li>
                 <li><Link to="/admin/funcionarios">Gerenciar Funcionários</Link></li>
                 <li><Link to="/admin/historico">Ver Histórico</Link></li>
+                <li><Link to="/salas">Ver Salas</Link></li>
             </ul>
         </div>
     );

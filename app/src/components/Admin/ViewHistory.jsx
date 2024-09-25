@@ -8,12 +8,7 @@ function ViewHistory() {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZEZ1bmNpb25hcmlvIjoiMiIsImlzQWRtaW4iOiJ0cnVlIiwiZXhwIjoxNzI3MjcwNjE5LCJpc3MiOiJQcm9qZXRvRmVjaGFkdXJhIiwiYXVkIjoiUHJvamV0b0ZlY2hhZHVyYUF1ZGllbmNlIn0.fQppRIs0NTE3z8b_XxHu5mmEBifxkUR84hlxRwoxLiQ'; // Adicione seu token de autenticação
-                const response = await api.get('/Registro', {
-                    headers: {
-                        Authorization: `Bearer ${token}` // Inclua o token no cabeçalho
-                    }
-                });
+                const response = await api.get('/Registro');
                 setHistory(response.data);
             } catch (error) {
                 setMessage('Erro ao buscar histórico: ' + error.message);
@@ -22,17 +17,46 @@ function ViewHistory() {
         fetchHistory();
     }, []);
 
+    const handleDelete = async (id) => {
+        try {
+            await api.delete(`/Registro/${id}`);
+            setHistory(history.filter(record => record.idRegistro !== id));
+            setMessage('Registro deletado com sucesso.');
+        } catch (error) {
+            setMessage('Erro ao deletar registro: ' + error.message);
+        }
+    };
+
     return (
         <div className="admin-container">
             <h1>Histórico</h1>
             {message && <p className="message">{message}</p>}
-            <ul className="history-list">
-                {history.map(record => (
-                    <li key={record.idHistorico} className="history-item">
-                        {record.descricao}
-                    </li>
-                ))}
-            </ul>
+            <table className="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Horário de Entrada</th>
+                        <th>Horário de Saída</th>
+                        <th>ID Funcionário</th>
+                        <th>ID Sala</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {history.map(record => (
+                        <tr key={record.idRegistro}>
+                            <td>{record.idRegistro}</td>
+                            <td>{record.horarioEntrada}</td>
+                            <td>{record.horarioSaida || 'N/A'}</td>
+                            <td>{record.funcionario_IdFuncionario}</td>
+                            <td>{record.sala_IdSala}</td>
+                            <td>
+                                <button onClick={() => handleDelete(record.idRegistro)} className="button delete-button">Deletar</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }

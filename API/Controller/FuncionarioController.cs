@@ -54,9 +54,6 @@ namespace ProjetoFechadura.Controllers
         [Authorize]
         public IActionResult ReadById(int id)
         {
-            var idFuncionario = GetValidadorIdFromToken();
-            if (!IsUserAdmin(idFuncionario)) return Forbid();
-
             var funcionario = _funcionarioDao.ReadById(id);
             if (funcionario == null) return NotFound();
             return Ok(funcionario);
