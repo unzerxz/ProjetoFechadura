@@ -35,6 +35,9 @@ public class CargoController : ControllerBase
     [HttpGet]
     public IActionResult Read()
     {
+        var idFuncionario = GetValidadorIdFromToken();
+        if (!IsUserAdmin(idFuncionario)) return Forbid();
+        
         var cargos = _cargoDao.Read();
         return Ok(cargos);
     }
@@ -42,6 +45,9 @@ public class CargoController : ControllerBase
     [HttpGet("{id:int}")]
     public IActionResult ReadById(int id)
     {
+        var idFuncionario = GetValidadorIdFromToken();
+        if (!IsUserAdmin(idFuncionario)) return Forbid();
+
         var cargo = _cargoDao.ReadById(id);
         if (cargo == null) return NotFound();
         return Ok(cargo);

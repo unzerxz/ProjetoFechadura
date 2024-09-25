@@ -72,9 +72,6 @@ namespace ProjetoFechadura.Controllers
         [Authorize]
         public IActionResult Put(int id, [FromBody] Funcionario funcionario)
         {
-            var idFuncionario = GetValidadorIdFromToken();
-            if (!IsUserAdmin(idFuncionario)) return Forbid();
-
             if (id != funcionario.IdFuncionario || id == 1) return BadRequest();
             if (_funcionarioDao.ReadById(id) == null) return NotFound();
             _funcionarioDao.Update(id, funcionario);
@@ -215,35 +212,50 @@ namespace ProjetoFechadura.Controllers
             return _funcionarioDao.IsFuncionarioAdmin(idFuncionario);
         }
 
-        // Endpoint de login que gera um token JWT
-        [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.Identifier) || string.IsNullOrWhiteSpace(request.Senha))
-            {
-                return BadRequest(new { Message = "Nome de usuário e senha são obrigatórios" });
-            }
+[HttpPost("login")]
+public IActionResult Login([FromBody] LoginRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Identifier) || string.IsNullOrWhiteSpace(request.Senha))
+    {
+        return BadRequest(new { Message = "Nome de usuário e senha são obrigatórios" });
+    }
 
-            int idFuncionario = _funcionarioDao.AuthenticateUser(request.Identifier, request.Senha);
-            if (idFuncionario == 0) return Unauthorized(new { Message = "Identificador ou senha inválidos" });
+    int idFuncionario = _funcionarioDao.AuthenticateUser(request.Identifier, request.Senha);
+    if (idFuncionario == 0) 
+        return Unauthorized(new { Message = "Identificador ou senha inválidos" });
 
-            var funcionario = _funcionarioDao.ReadById(idFuncionario);
-            if (funcionario == null || funcionario.IsAtivo != 1) return Unauthorized(new { Message = "Usuário não está ativo" });
+    var funcionario = _funcionarioDao.ReadById(idFuncionario);
+    if (funcionario == null || funcionario.IsAtivo != 1) 
+        return Unauthorized(new { Message = "Usuário não está ativo" });
 
-            // Verifica se já existe um token válido para este funcionário
-            var existingToken = _tokenDao.GetValidTokenForFuncionario(idFuncionario);
-            if (existingToken != null)
-            {
-                return Ok(new { Token = existingToken.Token, ExpirationTime = existingToken.TimeExpiracao, IsAdmin = IsUserAdmin(idFuncionario) });
-            }
+    // Verifica se já existe um token válido para este funcionário
+    var existingToken = _tokenDao.GetValidTokenForFuncionario(idFuncionario);
+    bool isAdmin = IsUserAdmin(idFuncionario); // Check if user is admin
 
-            // Se não existe um token válido, cria um novo
-            var token = GenerateJwtToken(idFuncionario);
-            var expirationTime = DateTime.UtcNow.AddHours(24); // Alterado para 24 horas
-            _tokenDao.SaveToken(token, expirationTime, idFuncionario);
+    if (existingToken != null)
+    {
+        return Ok(new { 
+            Token = existingToken.Token, 
+            ExpirationTime = existingToken.TimeExpiracao, 
+            IsAdmin = isAdmin, // Always send isAdmin
+            IdFuncionario = idFuncionario // Send employee ID
+        });
+    }
 
-            return Ok(new { Token = token, ExpirationTime = expirationTime });
-        }
+    // Se não existe um token válido, cria um novo
+    var token = GenerateJwtToken(idFuncionario);
+    var expirationTime = DateTime.UtcNow.AddHours(24); // Alterado para 24 horas
+    _tokenDao.SaveToken(token, expirationTime, idFuncionario);
+
+    return Ok(new { 
+        Token = token, 
+        ExpirationTime = expirationTime, 
+        IsAdmin = isAdmin, // Always send isAdmin
+        IdFuncionario = idFuncionario // Send employee ID
+    });
+}
+
+
 
         [HttpPost("logout")]
         [Authorize]

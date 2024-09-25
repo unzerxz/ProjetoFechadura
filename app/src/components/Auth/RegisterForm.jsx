@@ -5,12 +5,13 @@ function RegisterForm() {
     const [nomeUsuario, setNomeUsuario] = useState('');
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
+    const [nome, setNome] = useState('');
     const [message, setMessage] = useState('');
 
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/Funcionario', { NomeUsuario: nomeUsuario, Email: email, Senha: senha });
+            await api.post('/Funcionario', {Nome: nome, NomeUsuario: nomeUsuario, Email: email, Senha: senha });
             setMessage('Cadastro realizado com sucesso!');
         } catch (err) {
             setMessage('Erro ao realizar cadastro.');
@@ -21,6 +22,16 @@ function RegisterForm() {
         <div className="auth-container">
             <form onSubmit={handleRegister} className="auth-form">
                 <h2>Cadastro</h2>
+                <div className="form-group">
+                    <label htmlFor="nomeCompleto">Nome Completo:</label>
+                    <input
+                        type="text"
+                        id="nomeCompleto"
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
+                        required
+                    />
+                </div>
                 <div className="form-group">
                     <label htmlFor="nomeUsuario">Nome de Usuário:</label>
                     <input

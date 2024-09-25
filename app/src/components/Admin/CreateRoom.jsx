@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 import api from '../../services/api';
 
 function CreateRoom() {
     const [identificacaoSala, setIdentificacaoSala] = useState('');
     const [message, setMessage] = useState('');
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const handleCreateRoom = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/Sala/criarSala', { IdentificacaoSala: identificacaoSala });
+            // Since your request body is just a string, send it directly
+            await api.post('/Sala/criarSala', identificacaoSala, {
+                headers: {
+                    'Content-Type': 'application/json', // Set appropriate content type
+                },
+            });
             setMessage('Sala criada com sucesso!');
+            navigate('/salas'); // Redirect to SalaView page after successful creation
         } catch (err) {
             setMessage('Erro ao criar sala.');
         }

@@ -13,13 +13,15 @@ function LoginForm() {
         try {
             const response = await api.post('/Funcionario/login', { Identifier: identifier, Senha: senha });
             const Token = response.data.token;
-            console.log(Token);
-
-            localStorage.setItem('token', Token);
-
+            const employeeId = response.data.idFuncionario; // Get employee's ID from the API response
             const isAdmin = response.data.isAdmin;
+
+            // Store token and employee ID in localStorage
+            localStorage.setItem('token', Token);
+            localStorage.setItem('employeeId', employeeId); // Store employee ID
             localStorage.setItem('isAdmin', isAdmin);
 
+            // Navigate based on admin status
             if (isAdmin) {
                 navigate('/admin-dashboard');
             } else {
