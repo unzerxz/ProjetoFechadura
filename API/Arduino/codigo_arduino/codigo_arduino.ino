@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Keypad.h>
@@ -6,7 +7,7 @@
 
 // Definições para o RFID
 #define SS_PIN    5   // Pino SDA do módulo RFID
-#define RST_PIN   4   // Pino RST do módulo RFID
+#define RST_PIN   22  // Pino RST do módulo RFID
 MFRC522 rfid(SS_PIN, RST_PIN); // Instância do RFID
 
 // Definições para o Teclado
@@ -26,17 +27,27 @@ byte pin_column[COLUMN_NUM] = {26, 25, 33, 32}; // Pinos das colunas do teclado
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM);
 
 // Conexão WiFi
-const char* ssid = "Wokwi-GUEST";  // Coloque seu SSID aqui
-const char* password = "";         // Senha do WiFi
+const char* ssid = "WIFI-IOT";  // Coloque seu SSID aqui
+const char* password = "ac7ce9ss2@iot";         // Senha do WiFi
 
 // Endpoints da API
-String apiUrlValidarEntradaSaida = "http://192.168.1.100:5222/api/validarEntradaSaida";  // Substitua pelo seu IP
-String apiUrlAutorizarEntrada = "http://192.168.1.100:5222/api/autorizar-entrada";       // Substitua pelo seu IP
+String apiUrlValidarEntradaSaida = "http://200.210.232.98:5222/api/validarEntradaSaida";  // Substitua pelo seu IP
+String apiUrlAutorizarEntrada = "http://200.210.232.98:5222/api/autorizar-entrada";       // Substitua pelo seu IP
 
 // Variáveis de controle
 String inputPassword = "";
 long lastInteractionTime = 0;
 const int timeoutPeriod = 10000; // 10 segundos de timeout
+
+// Protótipos das funções
+void connectWiFi();
+void handleKeyInput(char key);
+String getRFIDCredential();
+void processRFIDCredential(String rfidData);
+void validateEntry(int password);
+void validateEntryWithCard(String cardCredential);
+void authorizeRoomEntry(String roomCredential);
+void resetInputs();
 
 void setup() {
   Serial.begin(115200);
@@ -47,6 +58,18 @@ void setup() {
   // Inicializar RFID
   SPI.begin();
   rfid.PCD_Init();
+  
+  // RFID module version check
+  byte version = rfid.PCD_ReadRegister(MFRC522::VersionReg);
+  if (version == 0x00 || version == 0xFF) {
+    Serial.println("WARNING: RFID module not detected!");
+  } else {
+    Serial.print("RFID module detected. Version: 0x");
+    Serial.println(version, HEX);
+  }
+
+  // Dump RFID module registers for debugging
+  rfid.PCD_DumpVersionToSerial();
   
   // Reset da senha
   inputPassword = "";
@@ -64,10 +87,29 @@ void loop() {
   }
 
   // Leitura do RFID
-  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    String rfidData = getRFIDCredential();
-    processRFIDCredential(rfidData);
-    lastInteractionTime = millis();
+  if (rfid.PICC_IsNewCardPresent()) {
+    Serial.println("Novo cartão detectado");
+    if (rfid.PICC_ReadCardSerial()) {
+      Serial.println("Card serial read successfully");
+      String rfidData = getRFIDCredential();
+      processRFIDCredential(rfidData);
+      lastInteractionTime = millis();
+    } else {
+      Serial.println("Failed to read card serial");
+    }
+  }
+
+  // Add this to check RFID module status periodically
+  static unsigned long lastRFIDCheck = 0;
+  if (millis() - lastRFIDCheck > 5000) {  // Check every 5 seconds
+    lastRFIDCheck = millis();
+    byte v = rfid.PCD_ReadRegister(MFRC522::VersionReg);
+    if (v == 0x00 || v == 0xFF) {
+      Serial.println("RFID module not detected during periodic check!");
+    } else {
+      Serial.print("RFID module version (periodic check): 0x");
+      Serial.println(v, HEX);
+    }
   }
 }
 
@@ -75,27 +117,19 @@ void loop() {
 void connectWiFi() {
   WiFi.begin(ssid, password);
   Serial.print("Conectando ao WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(1000);
     Serial.print(".");
+    attempts++;
   }
   Serial.println();
-  Serial.println("Conectado ao WiFi!");
-}
-
-// Função para tratar a entrada do teclado
-void handleKeyInput(char key) {
-  if (key >= '0' && key <= '9') {
-    inputPassword += key;
-    Serial.println(inputPassword);
-    
-    if (inputPassword.length() == 6) {
-      // Senha completa, chamar a API
-      validateEntry(inputPassword.toInt());
-      resetInputs();  // Resetar senha após envio
-    }
-  } else if (key == 'A') {
-    resetInputs();  // Limpar a entrada ao pressionar 'A'
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("Conectado ao WiFi!");
+    Serial.print("Endereço IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("Falha na conexão WiFi. Status: " + String(WiFi.status()));
   }
 }
 
@@ -103,9 +137,12 @@ void handleKeyInput(char key) {
 String getRFIDCredential() {
   String rfidCredential = "";
   for (byte i = 0; i < rfid.uid.size; i++) {
+    rfidCredential += (rfid.uid.uidByte[i] < 0x10 ? "0" : "");
     rfidCredential += String(rfid.uid.uidByte[i], HEX);
   }
   rfid.PICC_HaltA();  // Parar a leitura do cartão
+  Serial.print("RFID lido: ");
+  Serial.println(rfidCredential);
   return rfidCredential;
 }
 
@@ -137,9 +174,13 @@ void validateEntry(int password) {
       Serial.println("Resposta da API:");
       Serial.println(response);
     } else {
-      Serial.println("Erro na solicitação HTTP.");
+      Serial.print("Erro na solicitação HTTP. Código: ");
+      Serial.println(httpCode);
+      Serial.println("Erro: " + http.errorToString(httpCode));
     }
     http.end();
+  } else {
+    Serial.println("Não conectado ao WiFi. Status: " + String(WiFi.status()));
   }
 }
 
@@ -157,9 +198,29 @@ void validateEntryWithCard(String cardCredential) {
       Serial.println("Resposta da API:");
       Serial.println(response);
     } else {
-      Serial.println("Erro na solicitação HTTP.");
+      Serial.print("Erro na solicitação HTTP. Código: ");
+      Serial.println(httpCode);
+      Serial.println("Erro: " + http.errorToString(httpCode));
     }
     http.end();
+  } else {
+    Serial.println("Não conectado ao WiFi. Status: " + String(WiFi.status()));
+  }
+}
+
+// Função para tratar a entrada do teclado
+void handleKeyInput(char key) {
+  if (key >= '0' && key <= '9') {
+    inputPassword += key;
+    Serial.println(inputPassword);
+    
+    if (inputPassword.length() == 6) {
+      // Senha completa, chamar a API
+      validateEntry(inputPassword.toInt());
+      resetInputs();  // Resetar senha após envio
+    }
+  } else if (key == 'A') {
+    resetInputs();  // Limpar a entrada ao pressionar 'A'
   }
 }
 
@@ -177,9 +238,13 @@ void authorizeRoomEntry(String roomCredential) {
       Serial.println("Resposta da API:");
       Serial.println(response);
     } else {
-      Serial.println("Erro na solicitação HTTP.");
+      Serial.print("Erro na solicitação HTTP. Código: ");
+      Serial.println(httpCode);
+      Serial.println("Erro: " + http.errorToString(httpCode));
     }
     http.end();
+  } else {
+    Serial.println("Não conectado ao WiFi. Status: " + String(WiFi.status()));
   }
 }
 
